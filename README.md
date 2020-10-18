@@ -5,6 +5,10 @@ Network map depends on the [pyyed library](https://github.com/jamesscottbrown/py
 
 To take advantage of the editable network map feature, use [yEd graph editor](https://www.yworks.com/products/yed).
 
+***NOTE:***
+===========
+To correctly display the network map, go to 'layout-->One-Click Layout'.  Then you can go to 'tools-->Fit label to node'
+
 usage: 
 ==========
 scanio [-h] [-s START] [-e END] [-r RANGE] [-p PORTS] [-c] [-f] [--show] [-m] address
