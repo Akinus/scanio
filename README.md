@@ -5,7 +5,7 @@ Network map depends on the [pyyed library](https://github.com/jamesscottbrown/py
 
 To take advantage of the editable network map feature, use [yEd graph editor](https://www.yworks.com/products/yed).
 
-<code>usage: scanio [-h] [-s START] [-e END] [-r RANGE] [-p PORTS] [-c] [-f] [--show] [-m] address
+usage: scanio [-h] [-s START] [-e END] [-r RANGE] [-p PORTS] [-c] [-f] [--show] [-m] address
 
 positional arguments:
   address               REQUIRED: This address will be a 3-octet or a 4-octet address.'
@@ -30,4 +30,4 @@ optional arguments:
   --show                  Shows the currently logged results for the address. When used with --map this will recreate the network
                           map also
   -m, --map               Creates a network map to a .graphml file Download yEd to edit scanio.graphml from
-                          https://www.yworks.com/products/yed</code>
+                          https://www.yworks.com/products/yed
