@@ -24,7 +24,8 @@ optional arguments:
   Starting host number. The scan will begin at this host number. Defaults to 1
                           
   -e END, --end END
-  -------------------------Ending host number. The scan will stop at this number if included Defaults to 254 ***If this option is enabled, you cannot use -r or --range.***
+  -------------------------
+  Ending host number. The scan will stop at this number if included Defaults to 254 ***If this option is enabled, you cannot use -r or --range.***
                           
   -r RANGE, --range RANGE
   ------------------------
