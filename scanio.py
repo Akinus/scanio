@@ -222,7 +222,11 @@ def bannerGrab(addy, port):
         out, err = tcp_res.communicate()
         tcp_res.kill()
     except:
-        out = 'Error'
+        out = 'ERR-0'
+
+    if search('concurrent connection', out):
+        out = 'ERR-1'
+
     return out.partition('\n')[0]
 
 
@@ -516,18 +520,15 @@ def netgraph():
             addy = h.find('address').text
             ports = h.findall('port')
             hostname = h.find('hostname').text
-            counter = 0
             for p in ports:
                 var = p.findtext('number')
-                if counter == 5:
+                banner = p.findtext('banner')
+                if search('ERR', banner):
+                    banner = ''
+                if banner == "":
                     portnums = '{0}\n{1}'.format(portnums, var)
-                    counter = 1
-                elif counter == 0:
-                    portnums = '{0} {1}'.format(portnums, var)
-                    counter += 3
                 else:
-                    portnums = '{0}, {1}'.format(portnums, var)
-                    counter += 1
+                    portnums = '{0}\n{1} --> {2}'.format(portnums, var, banner[:5])
             if hostname == None:
                 hostname = 'Hostname Unknown'
             nodeText = '{0}\n{1}\n{2}'.format(addy, hostname, portnums)
@@ -674,7 +675,7 @@ secs = None
 tic = None
 currcount = Value('i', 0)
 if os.path.exists('scanio.xml') == False:
-    newScan()
+    clearLog()
 lock = Lock()
 
 if __name__ == '__main__':
