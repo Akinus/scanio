@@ -495,13 +495,6 @@ def netgraph():
     bn = 'base'
     G.add_node(bn, label='base')
 
-    options = {
-    'with_labels': True,
-    'node_size': 100,
-    'font_size': 1,
-    'node_shape': 's'
-    }
-
     tree = ET.parse('scanio.xml')
     root = tree.getroot()
     subnets = root.findall('subnet')
@@ -510,30 +503,38 @@ def netgraph():
         sa = sub.findtext('subnet-address')
         sn = sub.findtext('subnet-name')
 
-        subnetText = '{0}\n{1}'.format(sa, sn)
+        subnetText = 'Subnet:\n{0}\n{1}'.format(sa, sn)
 
         G.add_node(sa, label=subnetText, shape="roundrectangle")
         G.add_edge(bn, sa, label=get_ip_address(sa), arrowhead="none")
         hosts = sub.findall('host')
+        plist = list()
         for h in hosts:
             portnums = 'Ports:'
             addy = h.find('address').text
             ports = h.findall('port')
             hostname = h.find('hostname').text
             for p in ports:
-                var = p.findtext('number')
-                banner = p.findtext('banner')
-                if search('ERR', banner):
-                    banner = ''
-                if banner == "":
-                    portnums = '{0}\n{1}'.format(portnums, var)
-                else:
-                    portnums = '{0}\n{1} --> {2}'.format(portnums, var, banner[:5])
+                plist.append(int(p.findtext('number')))
+
+            for var in sorted(plist):
+                for b in root.findall('./subnet/[subnet-address = "'+sa+'"]/host/[address = "'+addy+'"]/port/[number = "'+str(var)+'"]/banner'):
+                    if b.text:
+                        banner = b.text
+                        if search('ERR', banner):
+                            portnums = '{0}\n{1} {2}'.format(portnums, var,' '*24)
+                        else:
+                            portnums = '{0}\n{1} --> {2}'.format(portnums, var, banner[:10])     
+                    else:
+                        portnums = '{0}\n{1} {2}'.format(portnums, var,' '*24)
+                plist.remove(var)  
+
             if hostname == None:
                 hostname = 'Hostname Unknown'
             nodeText = '{0}\n{1}\n{2}'.format(addy, hostname, portnums)
             G.add_node(addy, label=nodeText, shape="roundrectangle")
             G.add_edge(sa, addy, arrowhead="none")
+            
  
     with open('scanio.graphml', 'w') as fp:
         fp.write(G.get_graph())
@@ -734,71 +735,3 @@ if __name__ == '__main__':
         if netmap:
             netgraph()
     
-
-#--------------------------------------------------------------------------
-#    CODE BITS TO NOT GET RID OF IN CASE I WANT TO USE IT LATER
-#--------------------------------------------------------------------------
-    # # proc = []
-    # sleeptime = 0.05
-    # lessercount = 100
-    # greaterCount = 2000
-    # gc = 0
-    # cc = 0        
-    # for tp in final_ports:
-    #             if gc >= greaterCount:
-    #                 print('\nPausing to allow files to close...\n')
-    #                 time.sleep(5)
-    #                 for pr in proc:
-    #                     if pr.is_alive():
-    #                         pr.kill()
-    #                     else:
-    #                         pr.join()
-    #                         pr.close()
-    #                 proc[:] = []
-    #                 gc = 0
-    #                 cc = 0
-    #             if cc >= lessercount:
-    #                 time.sleep(1.25)
-    #                 for pr in proc:
-    #                     if pr.is_alive():
-    #                         pr.kill()
-    #                     else:
-    #                         pr.join()
-    #                         pr.close()
-    #                 proc[:] = []
-    #                 cc = 0
-    #             if opts.fast:
-    #                 scanproc = Process(target=callScanNC, args=(addy, tp))
-    #                 scanproc.start()
-    #                 time.sleep(sleeptime)
-    #                 sleeptime = 0.05
-    #                 lessercount = 500
-    #                 greaterCount = 65535
-    #             elif os.name == 'nt':
-    #                 scanproc = Process(target=callScanW, args=(addy, tp))
-    #                 scanproc.start()
-    #                 time.sleep(sleeptime)
-    #             else:
-    #                 scanproc = Process(target=callScanP, args=(addy, tp))
-    #                 scanproc.start()
-    #                 time.sleep(sleeptime)
-    #             proc.append(scanproc)
-    #             currcount += 1
-    #             toc = time.perf_counter()
-    #             secs = f'{toc - tic:0.1f}'
-    #             update_progress(currcount, totalscans, secs)
-    #             cc += 1
-    #             gc += 1
-                
-    #     for pr in proc:
-    #         if pr.is_alive():
-    #             time.sleep(2)
-    #             pr.kill()
-    #         else:
-    #             pr.join()
-    #             pr.close()
-    # except KeyboardInterrupt:
-    #     print('Retrieving Results...')
-    #     printall(net)
-    #     time.sleep(0.2)
-    #     sys.exit(2)
