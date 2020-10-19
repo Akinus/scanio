@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 ########################################################################
 # This header measures out 72 Characters of line length
-# File Name : test.py
+# File Name : scanio.py
 # Author : Gabriel Akonom
 # Creation Date : 24Sep2020
-# Last Modified : Thu Sep 24 14:32:40 2020
-# Description:
+# Last Modified : Sun Oct 18 21:47:15 2020
+# Description: scans a network using /dev/tcp or netcat
+#              with several productivity features
 #
 ########################################################################
 
