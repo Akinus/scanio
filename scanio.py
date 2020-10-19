@@ -733,7 +733,7 @@ if __name__ == '__main__':
     currcount.value = totalscans
     update_progress()
     time.sleep(0.3)
-    print('\n\n\t\t*** SCAN COMPLETE *** Retrieving Final Results...')
+    # print('\n\n\t\t*** SCAN COMPLETE *** Retrieving Final Results...')
     logVars = sortXML(printnet)
     if logVars == 1:
         print('\nNo Hosts Found...')
