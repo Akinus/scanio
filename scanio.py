@@ -714,6 +714,7 @@ if __name__ == '__main__':
             if logVars == 1:
                 pass
             else:
+                print('\r{0}'.format(' '*70))
                 printall(addy)
 
     except KeyboardInterrupt:
