@@ -366,7 +366,6 @@ def initiate():
 
     opts = uinput.parse_args()
 
-    # if opts.address != None:
     net = opts.address
     if opts.show:
         printall(net)
@@ -380,10 +379,6 @@ def initiate():
         ipend = int(net.split('.')[3])
         net = '.'.join(net.split('.')[0:3])
     
-        
-    # else:
-    #     net = '192.168.0'
-
     if opts.start and len(net.split('.')) < 3:
         ipstart = int(opts.start)
      
@@ -542,7 +537,6 @@ def netgraph():
                         portext = '{0} --> {1}'.format(port, banner[:10])   
                     else:
                         portext = '{0}     {1}'.format(port, ' '*20)
-                # print('{0} :{1}'.format(portext,len(portext)))
                 portnums = '{0}\n{1}'.format(portnums, portext)
                 plist.remove(var)  
 
@@ -587,7 +581,6 @@ def sortXML(addy):
             hostaddl = hostaddt.split('.')
             hostaddstr = ''.join(hostaddl)
             if ports == []:
-                #print('\nSubnet:{0}|||\nHost:{1}|||\nPorts:{2}|||'.format(subnet, host, ports))
                 subnet.remove(host)
                 indent(root)
                 tree.write("scanio.xml")
@@ -596,7 +589,6 @@ def sortXML(addy):
                     key = numv.findtext("number")
                     pdata.append((int(hostaddstr+key), numv))
         pdata.sort()
-        #print(pdata)
         subnethosts[:] = [item[-1] for item in pdata]     
         indent(root)
         tree.write("scanio.xml")
@@ -626,7 +618,6 @@ def printall(addy):
                 print(ip)
 
             for p in root.findall('./subnet/[subnet-address = "'+naddy+'"]/host/[address = "'+ip+'"]/port/number'):
-                # print('     {0}'.format(p.text))
                 plist.append(int(p.text))
             for pp in sorted(plist):
                 spacelen = 5 - len(str(pp))
@@ -661,7 +652,6 @@ def printall(addy):
                 else:
                     print(ip)
                 for p in root.findall('./subnet/[subnet-address = "'+naddy+'"]/host/[address = "'+ip+'"]/port/number'):
-                    # print('     {0}'.format(p.text))
                     plist.append(int(p.text))
                 for pp in sorted(plist):
                     spacelen = 5 - len(str(pp))
@@ -698,8 +688,6 @@ def init(args):
     global currcount
     currcount = args
 
-#set global variables
-#set_start_method('spawn')
 progtext = None        
 totalscans = 0
 secs = None
@@ -737,8 +725,6 @@ if __name__ == '__main__':
             with Pool(initializer = init, initargs = (currcount, ), processes=20, maxtasksperchild=100) as pool:
                 results = pool.starmap_async(scanType, zip(repeat(addy), final_ports))
                 results.wait()
-                # with currcount.get_lock():
-                #     currcount.value += 1
             logVars = sortXML(addy)
             if logVars == 1:
                 pass
