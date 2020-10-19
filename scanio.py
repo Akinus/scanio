@@ -355,7 +355,8 @@ def initiate():
     net = opts.address
     if opts.show:
         printall(net)
-        netgraph()
+        if opts.map:
+            netgraph()
         sys.exit()
 
     if len(net.split('.')) > 3:
@@ -709,6 +710,12 @@ if __name__ == '__main__':
                 results.wait()
                 # with currcount.get_lock():
                 #     currcount.value += 1
+            logVars = sortXML(addy)
+            if logVars == 1:
+                pass
+            else:
+                printall(addy)
+
     except KeyboardInterrupt:
         print('\n\n\t\t!!! SCAN INTERRUPTED !!! Retrieving Current Results...\n')
         time.sleep(0.2)
