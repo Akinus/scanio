@@ -159,23 +159,23 @@ def addHost(addy):
     with lock:
         sl = addy.split('.')
         subnetstr = './subnet/[subnet-address = "{0}.{1}.{2}"]'.format(sl[0], sl[1], sl[2])
-        pivotstr = './subnet/[subnet-address = "{0}.{1}.{2}"]/pivot'.format(sl[0], sl[1], sl[2])
+        # pivotstr = './subnet/[subnet-address = "{0}.{1}.{2}"]/pivot'.format(sl[0], sl[1], sl[2])
         tree = ET.parse('scanio.xml')
         root = tree.getroot()
         subnet = root.find(subnetstr)
-        pivot = root.find(pivotstr).text
-        if addy != pivot:
-            newip = ET.SubElement(subnet, 'host')
-            newaddr = ET.SubElement(newip, 'address')
-            newaddr.text = addy
-            newhn = ET.SubElement(newip, 'hostname')
-            newhn.text = ''
-            newun = ET.SubElement(newip, 'username')
-            newun.text = ''
-            newpw = ET.SubElement(newip, 'password')
-            newpw.text = ''
-            indent(root)
-            tree.write("scanio.xml")
+        # pivot = root.find(pivotstr).text
+        # if addy != pivot:
+        newip = ET.SubElement(subnet, 'host')
+        newaddr = ET.SubElement(newip, 'address')
+        newaddr.text = addy
+        newhn = ET.SubElement(newip, 'hostname')
+        newhn.text = ''
+        newun = ET.SubElement(newip, 'username')
+        newun.text = ''
+        newpw = ET.SubElement(newip, 'password')
+        newpw.text = ''
+        indent(root)
+        tree.write("scanio.xml")
     return
 
 def addPort(addy, num, banner):
@@ -602,8 +602,13 @@ def printall(addy):
         subnethosts = subnet.findall('host')
         if subnethosts:
             plist = list()
-            print('\n---------------')
-            print(ip)
+            print('\r---------------')
+
+            if ip == get_ip_address(naddy):
+                print('{0} (current host)'.format(ip))
+            else:
+                print(ip)
+
             for p in root.findall('./subnet/[subnet-address = "'+naddy+'"]/host/[address = "'+ip+'"]/port/number'):
                 # print('     {0}'.format(p.text))
                 plist.append(int(p.text))
@@ -613,7 +618,7 @@ def printall(addy):
                     if b.text:
                         banner = b.text
                         printtext = '|__ {0}\t--> {1}'.format(pp, banner)
-                print(printtext[:65]) 
+                print('\r{0}'.format(printtext[:65])) 
                 plist.remove(pp)       
     else:
         naddy = addy
@@ -629,8 +634,11 @@ def printall(addy):
                 hlist.append(h.text)
             ip_list = [ip.strip() for ip in hlist]
             for ip in sorted(ip_list, key = lambda ip: ( int(ip.split(".")[0]), int(ip.split(".")[1]), int(ip.split(".")[2]), int(ip.split(".")[3]))):
-                print('\n---------------')
-                print(ip)
+                print('\r---------------{0}'.format(' '*55))
+                if ip == get_ip_address(addy):
+                    print('{0} (current host)'.format(ip))
+                else:
+                    print(ip)
                 for p in root.findall('./subnet/[subnet-address = "'+naddy+'"]/host/[address = "'+ip+'"]/port/number'):
                     # print('     {0}'.format(p.text))
                     plist.append(int(p.text))
@@ -639,10 +647,9 @@ def printall(addy):
                     for b in root.findall('./subnet/[subnet-address = "'+naddy+'"]/host/[address = "'+ip+'"]/port/[number = "'+str(pp)+'"]/banner'):
                         if b.text:
                             banner = b.text
-                            printtext = '|__ {0}\t--> {1}'.format(pp, banner)
+                            printtext = '|__ {0}    --> {1}'.format(pp, banner)
                     print(printtext[:65])             
                     plist.remove(pp) 
- 
     return
 
 def clearLog():
@@ -716,6 +723,7 @@ if __name__ == '__main__':
             else:
                 print('\r{0}'.format(' '*70))
                 printall(addy)
+                print('\n')
 
     except KeyboardInterrupt:
         print('\n\n\t\t!!! SCAN INTERRUPTED !!!\n')
