@@ -534,13 +534,14 @@ def netgraph():
                 plist.append(int(p.findtext('number')))
 
             for var in sorted(plist):
+                spacelen = 6 - len(str(var))
                 for b in root.findall('./subnet/[subnet-address = "'+sa+'"]/host/[address = "'+addy+'"]/port/[number = "'+str(var)+'"]/banner'):
                     if b.text:
                         banner = b.text
                         if search('ERR', banner):
                             portnums = '{0}\n{1} {2}'.format(portnums, var,' '*24)
                         else:
-                            portnums = '{0}\n{1} --> {2}'.format(portnums, var, banner[:10])     
+                            portnums = '{0}\n{1}{2}--> {3}'.format(portnums, var, ' '*spacelen, banner[:10])     
                     else:
                         portnums = '{0}\n{1} {2}'.format(portnums, var,' '*24)
                 plist.remove(var)  
@@ -628,11 +629,12 @@ def printall(addy):
                 # print('     {0}'.format(p.text))
                 plist.append(int(p.text))
             for pp in sorted(plist):
+                spacelen = 5 - len(str(pp))
                 printtext = '|__ {0}'.format(pp)
                 for b in root.findall('./subnet/[subnet-address = "'+naddy+'"]/host/[address = "'+ip+'"]/port/[number = "'+str(pp)+'"]/banner'):
                     if b.text:
                         banner = b.text
-                        printtext = '|__ {0}\t--> {1}'.format(pp, banner)
+                        printtext = '|__ {0} {1}-> {2}'.format(pp, '-'*spacelen, banner)
                 print('\r{0}'.format(printtext[:65])) 
                 plist.remove(pp)       
     else:
@@ -658,12 +660,13 @@ def printall(addy):
                     # print('     {0}'.format(p.text))
                     plist.append(int(p.text))
                 for pp in sorted(plist):
+                    spacelen = 5 - len(str(pp))
                     printtext = '|__ {0}'.format(pp)
                     for b in root.findall('./subnet/[subnet-address = "'+naddy+'"]/host/[address = "'+ip+'"]/port/[number = "'+str(pp)+'"]/banner'):
                         if b.text:
                             banner = b.text
-                            printtext = '|__ {0}    --> {1}'.format(pp, banner)
-                    print(printtext[:65])             
+                            printtext = '|__ {0} {1}-> {2}'.format(pp, '-'*spacelen, banner)
+                    print('\r{0}'.format(printtext[:65]))           
                     plist.remove(pp) 
     return
 
