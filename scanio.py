@@ -725,7 +725,7 @@ if __name__ == '__main__':
             print('\nNo Hosts Found...')
             sys.exit(2)
         else:
-            printall(printnet)
+            # printall(printnet)
             if netmap:
                 netgraph()
             sys.exit(2)
@@ -739,7 +739,7 @@ if __name__ == '__main__':
         print('\nNo Hosts Found...')
         sys.exit(2)
     else:
-        printall(printnet)
+        # printall(printnet)
         if netmap:
             netgraph()
     
