@@ -186,7 +186,8 @@ def addPort(addy, num, banner):
         host = root.find(addyStr)
         if search('ssh', banner):
             # print('SSH PORT FOUND!!')
-            if host.find('./port/[number="'+str(num)+'"]') == None:
+            portnum = host.find('./port/[number="'+str(num)+'"]')
+            if portnum == None:
                 newport = ET.SubElement(host, 'port')
                 newportnum = ET.SubElement(newport, 'number')
                 newportnum.text = str(num)
@@ -203,13 +204,26 @@ def addPort(addy, num, banner):
                 newtunnelbuild.text = ""
                 indent(root)
                 tree.write("scanio.xml")
+            else:
+                bannertext = portnum.find('banner')
+                if bannertext.text != banner:
+                    bannertext.text = banner
+                indent(root)
+                tree.write("scanio.xml")
         else:
-            if host.find('./port/[number="'+str(num)+'"]') == None:
+            portnum = host.find('./port/[number="'+str(num)+'"]')
+            if portnum == None:
                 newport = ET.SubElement(host, 'port')
                 newportnum = ET.SubElement(newport, 'number')
                 newportnum.text = str(num)
                 newportbanner = ET.SubElement(newport, 'banner')
                 newportbanner.text = banner
+                indent(root)
+                tree.write("scanio.xml")
+            else:
+                bannertext = portnum.find('banner')
+                if bannertext.text != banner:
+                    bannertext.text = banner
                 indent(root)
                 tree.write("scanio.xml")
     return
@@ -222,10 +236,10 @@ def bannerGrab(addy, port):
         out, err = tcp_res.communicate()
         tcp_res.kill()
     except:
-        out = 'ERR-0'
+        out = 'Error!    Banner Grab Error.'
 
     if search('concurrent connection', out):
-        out = 'ERR-1'
+        out = ''
 
     return out.partition('\n')[0]
 
@@ -723,7 +737,6 @@ if __name__ == '__main__':
             else:
                 print('\r{0}'.format(' '*70))
                 printall(addy)
-                print('\n')
 
     except KeyboardInterrupt:
         print('\n\n\t\t!!! SCAN INTERRUPTED !!!\n')
