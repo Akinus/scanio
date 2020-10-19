@@ -237,7 +237,7 @@ def bannerGrab(addy, port):
         out, err = tcp_res.communicate()
         tcp_res.kill()
     except:
-        out = 'Error!    Banner Grab Error.'
+        out = 'BannerError.'
 
     if search('concurrent connection', out):
         out = ''
@@ -534,16 +534,16 @@ def netgraph():
                 plist.append(int(p.findtext('number')))
 
             for var in sorted(plist):
-                spacelen = 6 - len(str(var))
+                spacelen = 5 - len(str(var))
+                port = str(var)+' '*spacelen
                 for b in root.findall('./subnet/[subnet-address = "'+sa+'"]/host/[address = "'+addy+'"]/port/[number = "'+str(var)+'"]/banner'):
                     if b.text:
                         banner = b.text
-                        if search('ERR', banner):
-                            portnums = '{0}\n{1} {2}'.format(portnums, var,' '*24)
-                        else:
-                            portnums = '{0}\n{1}{2}--> {3}'.format(portnums, var, ' '*spacelen, banner[:10])     
+                        portext = '{0} --> {1}'.format(port, banner[:10])   
                     else:
-                        portnums = '{0}\n{1} {2}'.format(portnums, var,' '*24)
+                        portext = '{0}     {1}'.format(port, ' '*20)
+                # print('{0} :{1}'.format(portext,len(portext)))
+                portnums = '{0}\n{1}'.format(portnums, portext)
                 plist.remove(var)  
 
             if hostname == None:
@@ -631,10 +631,14 @@ def printall(addy):
             for pp in sorted(plist):
                 spacelen = 5 - len(str(pp))
                 printtext = '|__ {0}'.format(pp)
+                endlen = 70 - len(printtext)
+                printtext = printtext + ' '*endlen
                 for b in root.findall('./subnet/[subnet-address = "'+naddy+'"]/host/[address = "'+ip+'"]/port/[number = "'+str(pp)+'"]/banner'):
                     if b.text:
                         banner = b.text
                         printtext = '|__ {0} {1}-> {2}'.format(pp, '-'*spacelen, banner)
+                        endlen = 70 - len(printtext)
+                        printtext = printtext + ' '*endlen
                 print('\r{0}'.format(printtext[:65])) 
                 plist.remove(pp)       
     else:
