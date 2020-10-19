@@ -725,6 +725,7 @@ if __name__ == '__main__':
             with Pool(initializer = init, initargs = (currcount, ), processes=20, maxtasksperchild=100) as pool:
                 results = pool.starmap_async(scanType, zip(repeat(addy), final_ports))
                 results.wait()
+
             logVars = sortXML(addy)
             if logVars == 1:
                 pass
