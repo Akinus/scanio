@@ -621,6 +621,7 @@ def printall(addy):
                 plist.append(int(p.text))
 
             if plist:
+                print('\r{0}'.format(' '*70))
                 print(introptext)
 
                 for pp in sorted(plist):
@@ -650,6 +651,7 @@ def printall(addy):
                 hlist.append(h.text)
             ip_list = [ip.strip() for ip in hlist]
             for ip in sorted(ip_list, key = lambda ip: ( int(ip.split(".")[0]), int(ip.split(".")[1]), int(ip.split(".")[2]), int(ip.split(".")[3]))):
+                print('\r{0}'.format(' '*70))
                 print('\r---------------{0}'.format(' '*55))
                 if ip == get_ip_address(addy):
                     print('{0} (current host)'.format(ip))
@@ -734,7 +736,6 @@ if __name__ == '__main__':
             if logVars == 1:
                 pass
             else:
-                print('\r{0}'.format(' '*70))
                 printall(addy)
 
     except KeyboardInterrupt:
