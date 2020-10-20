@@ -137,7 +137,7 @@ def parseRange(nputstr=""):
 
 def get_ip_address(net):
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    s.connect((net + '.0', 80))
+    s.connect((net + '.0', 30100))
     return s.getsockname()[0]
 
 def addSubnet(addy):
