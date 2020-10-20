@@ -623,19 +623,19 @@ def printall(addy):
             if plist:
                 print(introptext)
 
-            for pp in sorted(plist):
-                spacelen = 5 - len(str(pp))
-                printtext = '|__ {0}'.format(pp)
-                endlen = 70 - len(printtext)
-                printtext = printtext + ' '*endlen
-                for b in root.findall('./subnet/[subnet-address = "'+naddy+'"]/host/[address = "'+ip+'"]/port/[number = "'+str(pp)+'"]/banner'):
-                    if b.text:
-                        banner = b.text
-                        printtext = '|__ {0} {1}-> {2}'.format(pp, '-'*spacelen, banner)
-                        endlen = 70 - len(printtext)
-                        printtext = printtext + ' '*endlen
-                print('\r{0}'.format(printtext[:65])) 
-                plist.remove(pp)       
+                for pp in sorted(plist):
+                    spacelen = 5 - len(str(pp))
+                    printtext = '|__ {0}'.format(pp)
+                    endlen = 70 - len(printtext)
+                    printtext = printtext + ' '*endlen
+                    for b in root.findall('./subnet/[subnet-address = "'+naddy+'"]/host/[address = "'+ip+'"]/port/[number = "'+str(pp)+'"]/banner'):
+                        if b.text:
+                            banner = b.text
+                            printtext = '|__ {0} {1}-> {2}'.format(pp, '-'*spacelen, banner)
+                            endlen = 70 - len(printtext)
+                            printtext = printtext + ' '*endlen
+                    print('\r{0}'.format(printtext[:65])) 
+                    plist.remove(pp)       
     else:
         naddy = addy
         tree = ET.parse('scanio.xml')
