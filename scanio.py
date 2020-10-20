@@ -587,7 +587,6 @@ def sortXML(addy):
             else:
                 for numv in ports:
                     key = numv.findtext("number")
-                    print('PORTS NOT EMPTY: {0}:{1}'.format(addy, key))
                     pdata.append((int(hostaddstr+key), numv))
         pdata.sort()
         subnethosts[:] = [item[-1] for item in pdata]     
@@ -611,15 +610,19 @@ def printall(addy):
         subnethosts = subnet.findall('host')
         if subnethosts:
             plist = list()
-            print('\r---------------')
+            introptext = '\r---------------'
 
             if ip == get_ip_address(naddy):
-                print('{0} (current host)'.format(ip))
+                introptext = '{0}\n{1} (current host)'.format(introptext, ip)
             else:
-                print(ip)
+                introptext = '{0}\n{1}'.format(introptext, ip)
 
             for p in root.findall('./subnet/[subnet-address = "'+naddy+'"]/host/[address = "'+ip+'"]/port/number'):
                 plist.append(int(p.text))
+
+            if plist:
+                print(introptext)
+
             for pp in sorted(plist):
                 spacelen = 5 - len(str(pp))
                 printtext = '|__ {0}'.format(pp)
