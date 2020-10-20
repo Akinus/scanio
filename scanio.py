@@ -586,8 +586,8 @@ def sortXML(addy):
                 tree.write("scanio.xml")
             else:
                 for numv in ports:
-                    print('PORTS NOT EMPTY: {0}:{1}'.format(addy, ports))
                     key = numv.findtext("number")
+                    print('PORTS NOT EMPTY: {0}:{1}'.format(addy, key))
                     pdata.append((int(hostaddstr+key), numv))
         pdata.sort()
         subnethosts[:] = [item[-1] for item in pdata]     
