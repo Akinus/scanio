@@ -580,7 +580,7 @@ def sortXML(addy):
             hostaddt = hostadd.text
             hostaddl = hostaddt.split('.')
             hostaddstr = ''.join(hostaddl)
-            if ports == []:
+            if ports == [] or ports == None:
                 subnet.remove(host)
                 indent(root)
                 tree.write("scanio.xml")
