@@ -179,12 +179,17 @@ def addHost(addy):
         tree.write("scanio.xml")
     return
 
-def addPort(addy, num, banner):
+def addPort(addy, num, banner, robust):
     with lock:
         addyStr = './subnet/host/[address = "'+str(addy)+'"]'
         tree = ET.parse('scanio.xml')
         root = tree.getroot()
         host = root.find(addyStr)
+        rbl = robust.splitlines()
+        if len(rbl) > 5:
+            robust = '\n'.join(rbl[5:-3])
+        else:
+            robust = None
         if search('ssh', banner):
             # print('SSH PORT FOUND!!')
             portnum = host.find('./port/[number="'+str(num)+'"]')
@@ -194,6 +199,8 @@ def addPort(addy, num, banner):
                 newportnum.text = str(num)
                 newportbanner = ET.SubElement(newport, 'banner')
                 newportbanner.text = banner
+                newportrobust = ET.SubElement(newport, 'robust')
+                newportrobust.text = robust
                 newtunnel = ET.SubElement(newport, 'tunnel')
                 newtunnellport = ET.SubElement(newtunnel, 'local-port')
                 newtunnellport.text = ""
@@ -219,6 +226,8 @@ def addPort(addy, num, banner):
                 newportnum.text = str(num)
                 newportbanner = ET.SubElement(newport, 'banner')
                 newportbanner.text = banner
+                newportrobust = ET.SubElement(newport, 'robust')
+                newportrobust.text = robust
                 indent(root)
                 tree.write("scanio.xml")
             else:
@@ -244,10 +253,31 @@ def bannerGrab(addy, port):
 
     return out.partition('\n')[0]
 
+def robustScan(addy, port):
+    try:
+        tcp_args = 'timeout 60 bash -c "nmap -T4 -A -sT -Pn ' + str(addy) + ' -p ' + str(port) + '"'
+        tcp_res = sub.Popen(tcp_args, stdout = sub.PIPE, stderr = sub.PIPE, universal_newlines = True, shell = True)
+        tcp_res.wait()
+        out, err = tcp_res.communicate()
+        tcp_res.kill()
+    except:
+        out = 'NMAP-Error.'
+
+    if search('concurrent connection', out):
+        out = ''
+
+    return out
+
 
 #### start port scan on linux using netcat
 def callScanNC(addy, tp):
     #netcat SCAN BEGIN
+    # print('Original Input: {0}'.format(addy))
+    oi = addy.split(':')
+    # print(oi)
+    addy = oi[0]
+    robustTF = bool(oi[1])
+    # print('Address: {0}   Robust: {1}'.format(addy, str(robustTF)))
     try:
         tcp_args = ['timeout 0.5 /bin/bash -c "nc -nvzw1 '+str(addy)+' '+str(tp)+' 2>&1"']
         tcp_res = sub.Popen(tcp_args, stdout = sub.PIPE, stderr = sub.PIPE, universal_newlines = True, shell = True)
@@ -262,6 +292,10 @@ def callScanNC(addy, tp):
         return result
 
     if "open" in result or "succ" in result:
+        if robustTF:
+            robust = robustScan(addy, tp)
+        else:
+            robust = None
         addyStr = './subnet/host/[address = "'+str(addy)+'"]'
         #Banner Grab
         banner = bannerGrab(addy, tp)
@@ -270,9 +304,9 @@ def callScanNC(addy, tp):
         hoste = root.find(addyStr)
         if hoste == None:
             addHost(addy)
-            addPort(addy, tp, banner)
+            addPort(addy, tp, banner, robust)
         else:
-            addPort(addy, tp, banner)
+            addPort(addy, tp, banner, robust)
     with currcount.get_lock():
         currcount.value += 1
     return result
@@ -281,6 +315,12 @@ def callScanNC(addy, tp):
 def callScanP(addy, tp):
     global currcount
     #/dev/tcp SCAN BEGIN
+    # print('Original Input: {0}'.format(addy))
+    oi = addy.split(':')
+    # print(oi)
+    addy = oi[0]
+    robustTF = bool(oi[1])
+    # print('Address: {0}   Robust: {1}'.format(addy, str(robustTF)))
     try:
         tcp_args = ['timeout 1 /bin/bash -c "exec echo > /dev/tcp/'+str(addy)+'/'+str(tp)+'";retval=$?;echo $retval']
         tcp_res = sub.Popen(tcp_args, stdout = sub.PIPE, stderr = sub.PIPE, universal_newlines = True, shell = True)
@@ -290,6 +330,10 @@ def callScanP(addy, tp):
     except:
         result = 'Encountered and error while scanning {0}'.format(addy)
     if result == '0\n':
+        if robustTF:
+            robust = robustScan(addy, tp)
+        else:
+            robust = None
         addyStr = './subnet/host/[address = "'+str(addy)+'"]'
         #Banner Grab
         banner = bannerGrab(addy, tp)
@@ -298,9 +342,9 @@ def callScanP(addy, tp):
         hoste = root.find(addyStr)
         if hoste == None:
             addHost(addy)
-            addPort(addy, tp, banner)
+            addPort(addy, tp, banner, robust)
         else:
-            addPort(addy, tp, banner)
+            addPort(addy, tp, banner, robust)
         return 'Success!!'
     with currcount.get_lock():
         currcount.value += 1
@@ -357,12 +401,15 @@ def initiate():
                                             this will recreate the network map also", action="store_true")
     uinput.add_argument("-m", "--map", help = "Creates a network map to a .graphml file \
                                                 Download yEd to edit scanio.graphml from https://www.yworks.com/products/yed", action="store_true")
+    uinput.add_argument("-rb", "--robust", help = "Runs NMAP -A on found ports. WARNING: THIS WILL DRASTICALLY SLOW \
+                                                DOWN THE SCAN. ***REQUIRES NMAP TO BE INSTALLED***", action="store_true")                                                
 
     ipstart = 1
     ipend = 254
     fulladd = False
     clearlog = False
     netmap = False
+    robust = False
 
     opts = uinput.parse_args()
 
@@ -495,7 +542,11 @@ def initiate():
         print('|--> The current log will be cleared and recreated')
         clearlog = True
                 
-    return operation, net, final_range, final_ports, totalscans, printnet, clearlog, netmap
+    if opts.robust:
+        print('|--> Will perform NMAP Robust scan on found ports')
+        robust = True
+
+    return operation, net, final_range, final_ports, totalscans, printnet, clearlog, netmap, robust
 
 def netgraph():
     print('\nCreating network map...')
@@ -632,11 +683,16 @@ def printall(addy):
                     for b in root.findall('./subnet/[subnet-address = "'+naddy+'"]/host/[address = "'+ip+'"]/port/[number = "'+str(pp)+'"]/banner'):
                         if b.text:
                             banner = b.text
-                            printtext = '|__ {0} {1}-> {2}'.format(pp, '-'*spacelen, banner)
-                            endlen = 70 - len(printtext)
-                            printtext = printtext + ' '*endlen
-                    print('\r{0}'.format(printtext[:65])) 
-                    plist.remove(pp)       
+                            printtext = '|__ {0} {1}-> {2}\n'.format(pp, '-'*spacelen, banner[:50])
+                    
+                    for r in root.findall('./subnet/[subnet-address = "'+naddy+'"]/host/[address = "'+ip+'"]/port/[number = "'+str(pp)+'"]/robust'):
+                        if r.text:
+                            rb = r.text.splitlines()
+                            rb = '\n     '.join(rb)
+                            printtext = '|__ {0}'.format(rb)
+
+                    print('{0}'.format(printtext))          
+                    plist.remove(pp)
     else:
         naddy = addy
         tree = ET.parse('scanio.xml')
@@ -665,9 +721,16 @@ def printall(addy):
                     for b in root.findall('./subnet/[subnet-address = "'+naddy+'"]/host/[address = "'+ip+'"]/port/[number = "'+str(pp)+'"]/banner'):
                         if b.text:
                             banner = b.text
-                            printtext = '|__ {0} {1}-> {2}'.format(pp, '-'*spacelen, banner)
-                    print('\r{0}'.format(printtext[:65]))           
-                    plist.remove(pp) 
+                            printtext = '|__ {0} {1}-> {2}\n'.format(pp, '-'*spacelen, banner[:50])
+                    
+                    for r in root.findall('./subnet/[subnet-address = "'+naddy+'"]/host/[address = "'+ip+'"]/port/[number = "'+str(pp)+'"]/robust'):
+                        if r.text:
+                            rb = r.text.splitlines()
+                            rb = '\n     '.join(rb)
+                            printtext = '|__ {0}'.format(rb)
+
+                    print('{0}'.format(printtext))          
+                    plist.remove(pp)
     return
 
 def clearLog():
@@ -713,6 +776,7 @@ if __name__ == '__main__':
     printnet = scanInfo[5]
     clearlog = scanInfo[6]
     netmap = scanInfo[7]
+    robust = scanInfo[8]
 
     contVar = input('Continue? Y/N (default y): ')
     if contVar != 'Y' and contVar != 'Yes' and contVar != 'yes' and contVar != 'y' and contVar != '':
@@ -729,7 +793,7 @@ if __name__ == '__main__':
         for i in final_range:
             addy = str(net) + "." + str(i)
             with Pool(initializer = init, initargs = (currcount, ), processes=20, maxtasksperchild=100) as pool:
-                results = pool.starmap_async(scanType, zip(repeat(addy), final_ports))
+                results = pool.starmap_async(scanType, zip(repeat(str(addy)+':'+str(robust)), final_ports))
                 results.wait()
 
             logVars = sortXML(addy)
