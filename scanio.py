@@ -767,7 +767,6 @@ def clearNote(addy):
         tcpnode.remove(dn)
     indent(root)
     tree.write(filename)
-
     return
 
 def newScan(addy):
@@ -1126,6 +1125,10 @@ def newNote(addy, data):
         with open(filename, "w") as f:
             f.write(newCT)
             f.close()
+        tree = ET.parse(filename)
+        root = tree.getroot()
+        indent(root)
+        tree.write(filename)
     else:
         tree = ET.parse(filename)
         root = tree.getroot()
