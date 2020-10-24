@@ -923,8 +923,10 @@ def newNote(addy, data):
         \n</node>\n<node name="Log Book" unique_id="1" prog_lang="custom-colors" tags="" readonly="0" \
         custom_icon_id="20" is_bold="1" foreground="" ts_creation="0" ts_lastsave="1495714168"/>\n</node>\n</cherrytree>'
 
+        data = newCT.split('\n')
         with open(filename, "w") as f:
-            f.write(newCT)
+            for line in data:
+                f.write(line)
             f.close()
         tree = ET.parse(filename)
         root = tree.getroot()
