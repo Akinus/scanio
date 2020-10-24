@@ -781,8 +781,14 @@ def newScan(addy):
 def newNote(addy, data):
     # print('\nCreating Cherry Tree Note...')
     filename = addy + '.ctd'
-    data = data.replace('<', '(')
-    data = data.replace('>', ')')
+    checkWords = ("<",">")
+    repWords = ("(",")")
+
+    for line in data:
+        for check, rep in zip(checkWords, repWords):
+            line = line.replace(check, rep)
+    
+    data = line
     if os.path.exists(filename) == False:
         newCT = '<?xml version="1.0" encoding="UTF-8"?>\n<cherrytree>\n<bookmarks list=""/>\n \
         <node name="'+str(addy)+'" unique_id="2" prog_lang="custom-colors" \
