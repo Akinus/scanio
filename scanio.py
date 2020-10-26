@@ -417,7 +417,8 @@ def initiate():
 
     net = opts.address
     if opts.show:
-        printall(net)
+        printext = printall(net)
+        print(printext)
         if opts.map:
             netgraph()
         sys.exit()
