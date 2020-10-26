@@ -552,7 +552,7 @@ def initiate():
         print('|--> Will perform NMAP Robust scan on found ports')
         robust = True
 
-    return operation, net, final_range, final_ports, totalscans, printnet, clearlog, netmap, robust, newNote
+    return operation, net, final_range, final_ports, totalscans, printnet, clearlog, netmap, robust, newNote, fulladd
 
 def netgraph():
     print('\nCreating network map...')
@@ -963,6 +963,7 @@ if __name__ == '__main__':
     netmap = scanInfo[7]
     robust = scanInfo[8]
     note = scanInfo[9]
+    fulladd = scanInfo[10]
 
     contVar = input('Continue? Y/N (default y): ')
     if contVar != 'Y' and contVar != 'Yes' and contVar != 'yes' and contVar != 'y' and contVar != '':
@@ -975,10 +976,18 @@ if __name__ == '__main__':
 
     Timer()
     update_progress()
+    procnum = 20
+    if fulladd == True:
+        if len(final_ports) > 30000:
+            procnum = 100
+        elif len(final_ports) > 10000:
+            procnum = 50
+            
+
     try:
         for i in final_range:
             addy = str(net) + "." + str(i)
-            with Pool(initializer = init, initargs = (currcount, ), processes=50, maxtasksperchild=100) as pool:
+            with Pool(initializer = init, initargs = (currcount, ), processes=procnum, maxtasksperchild=100) as pool:
                 results = pool.starmap_async(scanType, zip(repeat(str(addy)+':'+str(robust)), final_ports))
                 results.wait()
 
