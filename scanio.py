@@ -18,13 +18,31 @@ from itertools import repeat
 import subprocess as sub
 from subprocess import STDOUT, check_output
 from re import search
-import pyyed
 import time
 import socket
 import threading
 import argparse
 import sys
 import os
+
+#This portion will check for pyyed and prompt user to install it if not already
+try:
+    import pyyed
+except:
+    try:
+        while True:
+            choice = raw_input('Pyyed library not found but is needed. Install? \'Y\'es or \'N\'o?\n:')
+            if choice.lower() == 'y':
+                subprocess.call('pip install pyyed',shell=True)
+                import pyyed
+                break
+            elif choice.lower() == 'n':
+                exit()
+            else:
+                continue
+    except Exception as e:
+        print(e)
+        exit()
 
 class Timer(object):
 
