@@ -832,8 +832,6 @@ def newNote(addy, data):
         # else:
             # print ("Successfully created the directory %s " % path)
 
-    filepath = addypath + sep + 'Enumeration.txt'
-    open('Enumeration.txt', 'w').write(' ')
     datapath = enumpath + sep + 'TCP.txt'
     open(datapath, 'w').write(data)
     text = 'Content-Type: text/x-zim-wiki\nWiki-Format: zim 0.4\n\n**Service Exploited:  **\n\n**Vulnerability Type:**\n\n \
