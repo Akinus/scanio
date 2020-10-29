@@ -838,10 +838,9 @@ def newNote(addy, data):
     text = 'Content-Type: text/x-zim-wiki\nWiki-Format: zim 0.4\n\n**Service Exploited:  **\n\n**Vulnerability Type:**\n\n \
 **Exploit POC:**\n\n**Description: **\n\n\n\n**Discovery of Vulnerability**\n\n\n\n\n**Exploit Code Used**\n\n\n\n\n\n\n**Proof/Local.txt File** \
 \n[ ] Screenshot with ifconfig/ipconfig\n[ ] Submit too OSCP Exam Panel'
-    open('Exploitation.txt', 'w').write(text)
-    open('Goodies.txt', 'w').write(' ')
-    open('Log_Book.txt', 'w').write(' ')
-    open('Goodies.txt', 'w').write(' ')
+    open(addypath + 'Exploitation.txt', 'w').write(text)
+    open(addypath + 'Goodies.txt', 'w').write(' ')
+    open(addypath + 'Log_Book.txt', 'w').write(' ')
 
     text='Content-Type: text/x-zim-wiki\nWiki-Format: zim 0.4\n\n**Network Scanning**\n[ ] nmap -sn 10.11.1.*\n[ ] nmap -sL 10.11.1.*\n\
 [ ] nbtscan -r 10.11.1.0/24\n[ ] smbtree\n\nIndividual Host Scanning\n\n[ ] nmap  --top-ports 20 --open -iL iplist.txt\n\
@@ -856,14 +855,14 @@ def newNote(addy, data):
 [ ] acesss internal services (portfwd)\n\t[ ] add account\n\n\tWindows\n\t\t[ ] List of exploits\n\n\tLinux\n\t\t[ ] sudo su\
 \n\t\t[ ] KernelDB\n\t\t[ ] Searchsploit\n\nFinal\n[ ] Screenshot of IPConfig\WhoamI\n[ ] Copy proof.txt\n[ ] Dump hashes\n\
 [ ] Dump SSH Keys\n[ ] Delete files'
-    open('Methodology.txt', 'w').write(text)
-    open('Post_Exploitation.txt', 'w').write(' ')
+    open(addypath + 'Methodology.txt', 'w').write(text)
+    open(addypath + 'Post_Exploitation.txt', 'w').write(' ')
     text='Content-Type: text/x-zim-wiki\nWiki-Format: zim 0.4\n\n**Service Exploited:  **\n\n**Vulnerability Type:**\n\n**Exploit POC:**\
 \n\n**Description: **\n\n**Discovery of Vulnerability**\n\n\n\n\n\n\n**Exploit Code Used**\n\n\n\n\n\n\n**Proof/Local.txt File**\
 \n\n[ ] **Screenshot with ifconfig\ipconfig**\n[ ] **Submit to OSCP Exam Panel**'
-    open('Priv_Escalation.txt', 'w').write(text)
+    open(addypath + 'Priv_Escalation.txt', 'w').write(text)
     text='Content-Type: text/x-zim-wiki\nWiki-Format: zim 0.4\n\n**Software Versions**\n\n\n\n\n\n\n**Potential Exploits**'
-    open('Software_Versions.txt', 'w').write(text)
+    open(addypath + 'Software_Versions.txt', 'w').write(text)
 
 
 
