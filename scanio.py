@@ -560,11 +560,11 @@ def initiate():
         netmap = True
 
     if opts.note:
-        print('|--> Will create/modify a .ctd (Cherry Tree Note) file for each/this host in current directory...')
+        print('|--> Will create/modify Directories for notes (Zim) file for each/this host in current directory...')
         newNote = True
     
     if opts.clearlog:
-        print('|--> The current log will be cleared and recreated as well as the TCP enumeration of each host Cherry Tree note.')
+        print('|--> The current log will be cleared and recreated as well as the TCP enumeration of each host.')
         clearlog = True
                 
     if opts.robust:
@@ -772,20 +772,20 @@ def clearLog():
     return
 
 def clearNote(addy):
-    filename = addy + '.ctd'
-    if os.path.exists(filename) == False:
-        return
+    # filename = addy + '.ctd'
+    # if os.path.exists(filename) == False:
+    #     return
     
-    tree = ET.parse(filename)
-    root = tree.getroot()
-    tcpnode = root.find('./node[@name="'+str(addy)+'"]/node[@name="Enumeration"]/node[@name="TCP"]')
-    dataNodes = tcpnode.findall('rich_text')
-    if dataNodes == None:
-        return
-    for dn in dataNodes:
-        tcpnode.remove(dn)
-    indent(root)
-    tree.write(filename)
+    # tree = ET.parse(filename)
+    # root = tree.getroot()
+    # tcpnode = root.find('./node[@name="'+str(addy)+'"]/node[@name="Enumeration"]/node[@name="TCP"]')
+    # dataNodes = tcpnode.findall('rich_text')
+    # if dataNodes == None:
+    #     return
+    # for dn in dataNodes:
+    #     tcpnode.remove(dn)
+    # indent(root)
+    # tree.write(filename)
     return
 
 def newScan(addy):
@@ -798,161 +798,232 @@ def newScan(addy):
     return
 
 def newNote(addy, data):
+    paths = []
+    if os.name == 'nt':
+        sep = '\\'
+    else:
+        sep = '/'
+    
+    opath = os.getcwd()
+    addypath = opath + sep + addy
+    addyfile = addy + '.txt'
+    open(addyfile, 'w').write(' ')
+    try:
+        if os.path.exists(addypath) == False:
+            os.mkdir(addypath)
+    except OSError:
+        print ("Creation of the directory %s failed" % addypath)
+    # else:
+        # print ("Successfully created the directory %s " % addypath)
+
+    enumpath = addypath + sep + 'Enumeration'
+    paths.append(enumpath)
+    goodpath = addypath + sep + 'Goodies'
+    paths.append(goodpath)
+    pepath = addypath + sep + 'Post_Exploitation'
+    paths.append(pepath)
+
+    for path in paths:
+        try:
+            if os.path.exists(path) == False:
+                os.mkdir(path)
+        except OSError:
+            print ("Creation of the directory %s failed" % path)
+        # else:
+            # print ("Successfully created the directory %s " % path)
+
+    open('Enumeration.txt', 'w').write(' ')
+    datapath = enumpath + sep + 'TCP.txt'
+    open(datapath, 'w').write(data)
+    text = 'Content-Type: text/x-zim-wiki\nWiki-Format: zim 0.4\n\n**Service Exploited:  **\n\n**Vulnerability Type:**\n\n \
+**Exploit POC:**\n\n**Description: **\n\n\n\n**Discovery of Vulnerability**\n\n\n\n\n**Exploit Code Used**\n\n\n\n\n\n\n**Proof/Local.txt File** \
+\n[ ] Screenshot with ifconfig/ipconfig\n[ ] Submit too OSCP Exam Panel'
+    open('Exploitation.txt', 'w').write(text)
+    open('Goodies.txt', 'w').write(' ')
+    open('Log_Book.txt', 'w').write(' ')
+    open('Goodies.txt', 'w').write(' ')
+
+    text='Content-Type: text/x-zim-wiki\nWiki-Format: zim 0.4\n\n**Network Scanning**\n[ ] nmap -sn 10.11.1.*\n[ ] nmap -sL 10.11.1.*\n\
+[ ] nbtscan -r 10.11.1.0/24\n[ ] smbtree\n\nIndividual Host Scanning\n\n[ ] nmap  --top-ports 20 --open -iL iplist.txt\n\
+[ ] nmap -sS -A -sV -O -p- ipaddress\n[ ] nmap -sU ipaddress\n\nService Scanning\n\n\tWebApp\n\t[ ] Nikto\n\t[ ] dirb\n\t[ ] dirbuster\n\
+[ ] wpscan\n\t[ ] dotdotpwn\n\t[ ] view source\n\t[ ] davtest\cadevar\n\t[ ] droopscan\n\t[ ] joomscan\n\t[ ] LFI/RFI Test\n\t\n\n\n\
+\tLinux/Windows\n\t[ ] snmpwalk -c public -v1 ipaddress 1\n\t[ ] smbclient -L //ipaddress\n\t[ ] showmount -e ipaddress port\
+\n\t[ ] rpcinfo\n\t[ ] Enum4Linux\n\n\tAnything Else\n\t[ ] nmap scripts (locate *nse* | grep servicename)\n\t[ ] hydra\n\t\
+[ ] MSF Aux Modules\n\t[ ] Download the software\n\t\nExploitation\n[ ] Gather Version Numbes\n[ ] Searchsploit\n\
+[ ] Default Creds\n[ ] Creds Previously Gathered\n[ ] Download the software\nPost Exploitation\n\tLinux\n\t[ ] linux-local-enum.sh\
+\n\t[ ] linuxprivchecker.py\n\t[ ] linux-exploit-suggestor.sh\n\t[ ] unix-privesc-check.py\n\n\tWindows\n\t[ ] wpc.exe\n\t\
+[ ] windows-exploit-suggestor.py\n\t[ ] windows_privesc_check.py\n\t[ ] windows-privesc-check2.exe\nPriv Escalation\n\t\
+[ ] acesss internal services (portfwd)\n\t[ ] add account\n\n\tWindows\n\t\t[ ] List of exploits\n\n\tLinux\n\t\t[ ] sudo su\
+\n\t\t[ ] KernelDB\n\t\t[ ] Searchsploit\n\nFinal\n[ ] Screenshot of IPConfig\WhoamI\n[ ] Copy proof.txt\n[ ] Dump hashes\n\
+[ ] Dump SSH Keys\n[ ] Delete files'
+    open('Methodology.txt', 'w').write(text)
+    open('Post_Exploitation.txt', 'w').write(' ')
+    text='Content-Type: text/x-zim-wiki\nWiki-Format: zim 0.4\n\n**Service Exploited:  **\n\n**Vulnerability Type:**\n\n**Exploit POC:**\
+\n\n**Description: **\n\n**Discovery of Vulnerability**\n\n\n\n\n\n\n**Exploit Code Used**\n\n\n\n\n\n\n**Proof/Local.txt File**\
+\n\n[ ] **Screenshot with ifconfig\ipconfig**\n[ ] **Submit to OSCP Exam Panel**'
+    open('Priv_Escalation.txt', 'w').write(text)
+    text='Content-Type: text/x-zim-wiki\nWiki-Format: zim 0.4\n\n**Software Versions**\n\n\n\n\n\n\n**Potential Exploits**'
+    open('Software_Versions.txt', 'w').write(text)
+
+
+
+
     # print('\nCreating Cherry Tree Note...')
-    filename = addy + '.ctd'
-    data = data.replace('<', '(')
-    data = data.replace('>', ')')
-    if os.path.exists(filename) == False:
-        newCT = '<?xml version="1.0" encoding="UTF-8"?>\n<cherrytree>~<bookmarks list=""/>~ \
-        <node name="'+str(addy)+'" unique_id="2" prog_lang="custom-colors" \
-        tags="" readonly="0" custom_icon_id="10" is_bold="1" foreground="" \
-        ts_creation="0" ts_lastsave="1496953072">\n<node name="Enumeration" \
-        unique_id="17" prog_lang="custom-colors" tags="" readonly="0" \
-        custom_icon_id="21" is_bold="0" foreground="" ts_creation="0" ts_lastsave="1492949452">\n \
-        <node name="TCP" unique_id="26" prog_lang="custom-colors" tags="" readonly="0" \
-        custom_icon_id="18" is_bold="0" foreground="" ts_creation="1492949819" ts_lastsave="1500473593">\n \
-        <rich_text>'+data+'</rich_text>\n</node>\n<node name="UDP" unique_id="27" \
-        prog_lang="custom-colors" tags="" readonly="0" custom_icon_id="18" \
-        is_bold="0" foreground="" ts_creation="1492949826" ts_lastsave="1500473597"/>\n \
-        <node name="Web Services" unique_id="18" prog_lang="custom-colors" \
-        tags="" readonly="0" custom_icon_id="17" is_bold="0" foreground="" ts_creation="0" ts_lastsave="1492949605">\n \
-        <node name="Nikto" unique_id="24" prog_lang="custom-colors" tags="" \
-        readonly="0" custom_icon_id="18" is_bold="0" foreground="" ts_creation="1492949545" ts_lastsave="1492949578"/>\n \
-        <node name="Dirb\DirBuster" unique_id="25" prog_lang="custom-colors" tags="" \
-        readonly="0" custom_icon_id="18" is_bold="0" foreground="" ts_creation="1492949554" ts_lastsave="1500473690"/>\n \
-        <node name="WebDav" unique_id="33" prog_lang="custom-colors" tags="" readonly="0" \
-        custom_icon_id="18" is_bold="0" foreground="" ts_creation="1500473692" ts_lastsave="1500473698"/>\n \
-        <node name="CMS" unique_id="34" prog_lang="custom-colors" tags="" readonly="0" \
-        custom_icon_id="18" is_bold="0" foreground="" ts_creation="1500473700" ts_lastsave="1500473703"/>\n \
-        </node>\n<node name="Other Services" unique_id="20" prog_lang="custom-colors" tags="" \
-        readonly="0" custom_icon_id="44" is_bold="0" foreground="" ts_creation="0" ts_lastsave="1500473607">\n \
-        <node name="SMB" unique_id="21" prog_lang="custom-colors" tags="" readonly="0" \
-        custom_icon_id="0" is_bold="0" foreground="" ts_creation="1500473455" ts_lastsave="1500473619"/>\n \
-        <node name="SNMP" unique_id="29" prog_lang="custom-colors" tags="" readonly="0" \
-        custom_icon_id="0" is_bold="0" foreground="" ts_creation="1500473619" ts_lastsave="1500473631"/>\n \
-        <node name="DB" unique_id="31" prog_lang="custom-colors" tags="" readonly="0" \
-        custom_icon_id="0" is_bold="0" foreground="" ts_creation="1500473622" ts_lastsave="1500473677"/>\n \
-        <node name="Other" unique_id="32" prog_lang="custom-colors" tags="" readonly="0" \
-        custom_icon_id="0" is_bold="0" foreground="" ts_creation="1500473623" ts_lastsave="1500473681"/>\n \
-        </node>\n</node><node name="Exploitation" unique_id="22" prog_lang="custom-colors" \
-        tags="" readonly="0" custom_icon_id="22" is_bold="0" foreground="" ts_creation="0" ts_lastsave="1500474629">\n \
-        <rich_text weight="heavy">Service Exploited:\n\n\nVulnerability Type:\n\n\nExploit POC:</rich_text>\n \
-        <rich_text>\n</rich_text>\n<rich_text weight="heavy">Description</rich_text>\n<rich_text>:\n\n\n\n</rich_text>\n \
-        <rich_text underline="single" weight="heavy">Discovery of Vulnerability</rich_text>\n<rich_text>\n\n\n\n</rich_text>\n \
-        <rich_text underline="single" weight="heavy">Exploit Code Used</rich_text>\n<rich_text>\n\n\n\n</rich_text>\n \
-        <rich_text underline="single" weight="heavy">Proof\Local.txt File</rich_text>\n<rich_text>\n\n\n\n \
-        ☐ Screenshot with ifconfig\ipconfig\n☐ Submit too OSCP Exam Panel\n\n\n</rich_text>\n</node>\n \
-        <node name="Post Exploitation" unique_id="7" prog_lang="custom-colors" tags="" readonly="0" \
-        custom_icon_id="21" is_bold="0" foreground="" ts_creation="0" ts_lastsave="1495714301">\n \
-        <node name="Script Results" unique_id="4" prog_lang="custom-colors" tags="" readonly="0" \
-        custom_icon_id="44" is_bold="0" foreground="" ts_creation="1495714301" ts_lastsave="1495714310"/>\n \
-        <node name="Host Information" unique_id="15" prog_lang="custom-colors" tags="" readonly="0" \
-        custom_icon_id="18" is_bold="0" foreground="" ts_creation="0" ts_lastsave="1500474204">\n \
-        <rich_text underline="single" weight="heavy">Operating System</rich_text>\n<rich_text>\n\n\n</rich_text>\n \
-        <rich_text underline="single" weight="heavy">Architecture</rich_text>\n<rich_text>\n\n\n</rich_text>\n \
-        <rich_text underline="single" weight="heavy">Domain</rich_text>\n<rich_text>\n\n\n</rich_text>\n \
-        <rich_text underline="single" weight="heavy">Installed Updates</rich_text>\n<rich_text>\n\n\n</rich_text>\n</node>\n \
-        <node name="File System" unique_id="14" prog_lang="custom-colors" tags="" readonly="0" \
-        custom_icon_id="18" is_bold="0" foreground="" ts_creation="0" ts_lastsave="1500474208">\n \
-        <rich_text underline="single" weight="heavy">Writeable Files\Directories</rich_text>\n<rich_text>\n\n\n</rich_text>\n \
-        <rich_text underline="single" weight="heavy">Directory List</rich_text>\n<rich_text>\n\n\n\n</rich_text>\n</node>\n \
-        <node name="Running Processes" unique_id="8" prog_lang="custom-colors" tags="" readonly="0" \
-        custom_icon_id="18" is_bold="0" foreground="" ts_creation="0" ts_lastsave="1495714268">\n \
-        <rich_text underline="single" weight="heavy">Process List</rich_text>\n</node>\n \
-        <node name="Installed Applications" unique_id="10" prog_lang="custom-colors" tags="" readonly="0" \
-        custom_icon_id="18" is_bold="0" foreground="" ts_creation="0" ts_lastsave="1495714509">\n \
-        <rich_text underline="single" weight="heavy">Installed Applications</rich_text>\n</node>\n \
-        <node name="Users &amp; Groups" unique_id="11" prog_lang="custom-colors" tags="" \
-        readonly="0" custom_icon_id="18" is_bold="0" foreground="" ts_creation="0" ts_lastsave="1500474213">\n \
-        <rich_text underline="single" weight="heavy">Users</rich_text>\n<rich_text>\n\n\n</rich_text>\n \
-        <rich_text underline="single" weight="heavy">Groups</rich_text>\n</node>\n \
-        <node name="Network" unique_id="13" prog_lang="custom-colors" tags="" readonly="0" \
-        custom_icon_id="18" is_bold="0" foreground="" ts_creation="0" ts_lastsave="1500474223">\n \
-        <rich_text underline="single" weight="heavy">IPConfig\IFConfig</rich_text>\n<rich_text>\n\n\n</rich_text>\n \
-        <rich_text underline="single" weight="heavy">Network Processes</rich_text>\n<rich_text>\n\n\n</rich_text>\n \
-        <rich_text underline="single" weight="heavy">ARP</rich_text>\n<rich_text>\n\n\n\n</rich_text>\n \
-        <rich_text underline="single" weight="heavy">DNS</rich_text>\n<rich_text>\n\n\n\n</rich_text>\n \
-        <rich_text underline="single" weight="heavy">Route</rich_text>\n</node>\n \
-        <node name="Scheduled Jobs" unique_id="16" prog_lang="custom-colors" tags="" readonly="0" \
-        custom_icon_id="18" is_bold="0" foreground="" ts_creation="0" ts_lastsave="1496953428">\n \
-        <rich_text underline="single" weight="heavy">Scheduled Tasks</rich_text>\n</node>\n</node>\n \
-        <node name="Priv Escalation" unique_id="12" prog_lang="custom-colors" tags="" readonly="0" \
-        custom_icon_id="10" is_bold="0" foreground="" ts_creation="0" ts_lastsave="1500474606">\n \
-        <rich_text weight="heavy">Service Exploited:\n\n\nVulnerability Type:\n\n\nExploit POC:</rich_text>\n \
-        <rich_text>\n\n</rich_text>\n<rich_text weight="heavy">Description</rich_text>\n<rich_text>:\n\n</rich_text>\n \
-        <rich_text underline="single" weight="heavy">Discovery of Vulnerability</rich_text>\n<rich_text>\n\n\n\n</rich_text>\n \
-        <rich_text underline="single" weight="heavy">Exploit Code Used</rich_text>\n<rich_text>\n\n\n\n</rich_text>\n \
-        <rich_text underline="single" weight="heavy">Proof\Local.txt File</rich_text>\n<rich_text>\n \
-        ☐ Screenshot with ifconfig\ipconfig\n☐ Submit too OSCP Exam Panel\n</rich_text>\n</node>\n \
-        <node name="Goodies" unique_id="3" prog_lang="custom-colors" tags="" readonly="0" \
-        custom_icon_id="43" is_bold="0" foreground="" ts_creation="0" ts_lastsave="1492949508">\n \
-        <node name="Hashes" unique_id="9" prog_lang="custom-colors" tags="" readonly="0" custom_icon_id="18" \
-        is_bold="0" foreground="" ts_creation="0" ts_lastsave="1492949998"/>\n \
-        <node name="Passwords" unique_id="5" prog_lang="custom-colors" tags="" readonly="0" custom_icon_id="18" \
-        is_bold="0" foreground="" ts_creation="0" ts_lastsave="1492950150"/>\n \
-        <node name="Proof\Flags\Other" unique_id="6" prog_lang="custom-colors" tags="" readonly="0" \
-        custom_icon_id="18" is_bold="0" foreground="" ts_creation="0" ts_lastsave="1496953479"/>\n</node>\n \
-        <node name="Software Versions" unique_id="19" prog_lang="custom-colors" tags="" readonly="0" \
-        custom_icon_id="12" is_bold="0" foreground="" ts_creation="0" ts_lastsave="1603476230">\n \
-        <rich_text underline="single" weight="heavy">Software Versions</rich_text>\n<rich_text>\n\n\n\n</rich_text>\n \
-        <rich_text underline="single" weight="heavy">Potential Exploits</rich_text>\n</node>\n \
-        <node name="Methodology" unique_id="28" prog_lang="custom-colors" tags="" readonly="0" \
-        custom_icon_id="13" is_bold="1" foreground="" ts_creation="1496953072" ts_lastsave="1500474082">\n \
-        <rich_text underline="single" weight="heavy">Network Scanning</rich_text>\n<rich_text>\n\n \
-        ☐  nmap -sn 10.11.1.*\n☐  nmap -sL 10.11.1.*\n☐  nbtscan -r 10.11.1.0/24\n☐  </rich_text>\n \
-        <rich_text link="node 47">smbtree</rich_text>\n<rich_text>\n</rich_text>\n \
-        <rich_text underline="single" weight="heavy">Individual Host Scanning</rich_text>\n \
-        <rich_text>☐  nmap  --top-ports 20 --open -iL iplist.txt\n☐  nmap -sS -A -sV -O -p- ipaddress\n \
-        ☐  nmap -sU ipaddress\n\n</rich_text>\n \
-        <rich_text underline="single" weight="heavy">Service Scanning</rich_text>\n<rich_text>\n\n</rich_text>\n \
-        <rich_text weight="heavy">WebApp</rich_text>\n<rich_text>☐   </rich_text>\n \
-        <rich_text link="node 28">Nikto</rich_text>\n<rich_text>☐   </rich_text>\n \
-        <rich_text link="node 32">dirb</rich_text>\n<rich_text>☐   dirbuster\n☐   </rich_text>\n \
-        <rich_text link="node 30">wpscan</rich_text>\n<rich_text>☐   dotdotpwn\n☐   view source\n☐   davtest\cadevar \
-        ☐   droopscan\n☐   joomscan\n☐   LFI\RFI Test\n</rich_text>\n \
-        <rich_text weight="heavy">Linux\Windows</rich_text>\n<rich_text>☐   snmpwalk -c public -v1 </rich_text>\n \
-        <rich_text style="italic">ipaddress</rich_text>\n<rich_text> 1\n☐   smbclient -L //ipaddress\n \
-        ☐   showmount -e ipaddress port\n☐   rpcinfo\n☐   Enum4Linux\n</rich_text>\n \
-        <rich_text weight="heavy">Anything Else</rich_text>\n<rich_text>☐   </rich_text>\n \
-        <rich_text link="node 48">nmap scripts</rich_text>\n<rich_text> (locate *nse* | grep servicename)\n \
-        ☐   </rich_text><rich_text link="node 35">hydra</rich_text>\n<rich_text>☐   MSF Aux Modules\n \
-        ☐   Download the softward\n</rich_text>\n \
-        <rich_text underline="single" weight="heavy">Exploitation</rich_text>\n<rich_text> \
-        ☐   Gather Version Numbers\n☐   Searchsploit\n☐   Default Creds\n☐   Creds Previously Gathered\n \
-        ☐   Download the software\n</rich_text>\n \
-        <rich_text underline="single" weight="heavy">Post Exploitation</rich_text>\n<rich_text>\n</rich_text>\n \
-        <rich_text weight="heavy">Linux</rich_text>\n<rich_text>☐   linux-local-enum.sh\n \
-        ☐   linuxprivchecker.py\n☐   linux-exploit-suggestor.sh\n☐   unix-privesc-check.py\n</rich_text>\n \
-        <rich_text weight="heavy">Windows</rich_text>\n<rich_text>☐   wpc.exe\n☐   windows-exploit-suggestor.py\n \
-        ☐   </rich_text>\n<rich_text link="webs \
-        https://github.com/pentestmonkey/windows-privesc-check/blob/master/windows_privesc_check.py">\n \
-        windows_privesc_check.py</rich_text>\n<rich_text>☐  	windows-privesc-check2.exe\n</rich_text>\n \
-        <rich_text underline="single" weight="heavy">Priv Escalation</rich_text>\n<rich_text>☐  </rich_text>\n \
-        <rich_text link="node 36">acesss internal services (portfwd)</rich_text>\n<rich_text>☐  add account\n \
-        </rich_text>\n<rich_text weight="heavy">Windows</rich_text>\n<rich_text>☐  List of exploits\n</rich_text>\n \
-        <rich_text weight="heavy">Linux</rich_text>\n<rich_text>☐  sudo su\n☐  KernelDB\n☐  Searchsploit\n</rich_text>\n \
-        <rich_text underline="single" weight="heavy">Final</rich_text>\n<rich_text> \
-        ☐  Screenshot of IPConfig\WhoamI\n☐  Copy proof.txt\n☐  Dump hashes\n☐  Dump SSH Keys\n☐  Delete files</rich_text>\n \
-        \n</node>\n<node name="Log Book" unique_id="1" prog_lang="custom-colors" tags="" readonly="0" \
-        custom_icon_id="20" is_bold="1" foreground="" ts_creation="0" ts_lastsave="1495714168"/>\n</node>\n</cherrytree>'
+    # filename = addy + '.ctd'
+    # data = data.replace('<', '(')
+    # data = data.replace('>', ')')
+    # if os.path.exists(filename) == False:
+    #     newCT = '<?xml version="1.0" encoding="UTF-8"?>\n<cherrytree>~<bookmarks list=""/>~ \
+    #     <node name="'+str(addy)+'" unique_id="2" prog_lang="custom-colors" \
+    #     tags="" readonly="0" custom_icon_id="10" is_bold="1" foreground="" \
+    #     ts_creation="0" ts_lastsave="1496953072">\n<node name="Enumeration" \
+    #     unique_id="17" prog_lang="custom-colors" tags="" readonly="0" \
+    #     custom_icon_id="21" is_bold="0" foreground="" ts_creation="0" ts_lastsave="1492949452">\n \
+    #     <node name="TCP" unique_id="26" prog_lang="custom-colors" tags="" readonly="0" \
+    #     custom_icon_id="18" is_bold="0" foreground="" ts_creation="1492949819" ts_lastsave="1500473593">\n \
+    #     <rich_text>'+data+'</rich_text>\n</node>\n<node name="UDP" unique_id="27" \
+    #     prog_lang="custom-colors" tags="" readonly="0" custom_icon_id="18" \
+    #     is_bold="0" foreground="" ts_creation="1492949826" ts_lastsave="1500473597"/>\n \
+    #     <node name="Web Services" unique_id="18" prog_lang="custom-colors" \
+    #     tags="" readonly="0" custom_icon_id="17" is_bold="0" foreground="" ts_creation="0" ts_lastsave="1492949605">\n \
+    #     <node name="Nikto" unique_id="24" prog_lang="custom-colors" tags="" \
+    #     readonly="0" custom_icon_id="18" is_bold="0" foreground="" ts_creation="1492949545" ts_lastsave="1492949578"/>\n \
+    #     <node name="Dirb\DirBuster" unique_id="25" prog_lang="custom-colors" tags="" \
+    #     readonly="0" custom_icon_id="18" is_bold="0" foreground="" ts_creation="1492949554" ts_lastsave="1500473690"/>\n \
+    #     <node name="WebDav" unique_id="33" prog_lang="custom-colors" tags="" readonly="0" \
+    #     custom_icon_id="18" is_bold="0" foreground="" ts_creation="1500473692" ts_lastsave="1500473698"/>\n \
+    #     <node name="CMS" unique_id="34" prog_lang="custom-colors" tags="" readonly="0" \
+    #     custom_icon_id="18" is_bold="0" foreground="" ts_creation="1500473700" ts_lastsave="1500473703"/>\n \
+    #     </node>\n<node name="Other Services" unique_id="20" prog_lang="custom-colors" tags="" \
+    #     readonly="0" custom_icon_id="44" is_bold="0" foreground="" ts_creation="0" ts_lastsave="1500473607">\n \
+    #     <node name="SMB" unique_id="21" prog_lang="custom-colors" tags="" readonly="0" \
+    #     custom_icon_id="0" is_bold="0" foreground="" ts_creation="1500473455" ts_lastsave="1500473619"/>\n \
+    #     <node name="SNMP" unique_id="29" prog_lang="custom-colors" tags="" readonly="0" \
+    #     custom_icon_id="0" is_bold="0" foreground="" ts_creation="1500473619" ts_lastsave="1500473631"/>\n \
+    #     <node name="DB" unique_id="31" prog_lang="custom-colors" tags="" readonly="0" \
+    #     custom_icon_id="0" is_bold="0" foreground="" ts_creation="1500473622" ts_lastsave="1500473677"/>\n \
+    #     <node name="Other" unique_id="32" prog_lang="custom-colors" tags="" readonly="0" \
+    #     custom_icon_id="0" is_bold="0" foreground="" ts_creation="1500473623" ts_lastsave="1500473681"/>\n \
+    #     </node>\n</node><node name="Exploitation" unique_id="22" prog_lang="custom-colors" \
+    #     tags="" readonly="0" custom_icon_id="22" is_bold="0" foreground="" ts_creation="0" ts_lastsave="1500474629">\n \
+    #     <rich_text weight="heavy">Service Exploited:\n\n\nVulnerability Type:\n\n\nExploit POC:</rich_text>\n \
+    #     <rich_text>\n</rich_text>\n<rich_text weight="heavy">Description</rich_text>\n<rich_text>:\n\n\n\n</rich_text>\n \
+    #     <rich_text underline="single" weight="heavy">Discovery of Vulnerability</rich_text>\n<rich_text>\n\n\n\n</rich_text>\n \
+    #     <rich_text underline="single" weight="heavy">Exploit Code Used</rich_text>\n<rich_text>\n\n\n\n</rich_text>\n \
+    #     <rich_text underline="single" weight="heavy">Proof\Local.txt File</rich_text>\n<rich_text>\n\n\n\n \
+    #     ☐ Screenshot with ifconfig\ipconfig\n☐ Submit too OSCP Exam Panel\n\n\n</rich_text>\n</node>\n \
+    #     <node name="Post Exploitation" unique_id="7" prog_lang="custom-colors" tags="" readonly="0" \
+    #     custom_icon_id="21" is_bold="0" foreground="" ts_creation="0" ts_lastsave="1495714301">\n \
+    #     <node name="Script Results" unique_id="4" prog_lang="custom-colors" tags="" readonly="0" \
+    #     custom_icon_id="44" is_bold="0" foreground="" ts_creation="1495714301" ts_lastsave="1495714310"/>\n \
+    #     <node name="Host Information" unique_id="15" prog_lang="custom-colors" tags="" readonly="0" \
+    #     custom_icon_id="18" is_bold="0" foreground="" ts_creation="0" ts_lastsave="1500474204">\n \
+    #     <rich_text underline="single" weight="heavy">Operating System</rich_text>\n<rich_text>\n\n\n</rich_text>\n \
+    #     <rich_text underline="single" weight="heavy">Architecture</rich_text>\n<rich_text>\n\n\n</rich_text>\n \
+    #     <rich_text underline="single" weight="heavy">Domain</rich_text>\n<rich_text>\n\n\n</rich_text>\n \
+    #     <rich_text underline="single" weight="heavy">Installed Updates</rich_text>\n<rich_text>\n\n\n</rich_text>\n</node>\n \
+    #     <node name="File System" unique_id="14" prog_lang="custom-colors" tags="" readonly="0" \
+    #     custom_icon_id="18" is_bold="0" foreground="" ts_creation="0" ts_lastsave="1500474208">\n \
+    #     <rich_text underline="single" weight="heavy">Writeable Files\Directories</rich_text>\n<rich_text>\n\n\n</rich_text>\n \
+    #     <rich_text underline="single" weight="heavy">Directory List</rich_text>\n<rich_text>\n\n\n\n</rich_text>\n</node>\n \
+    #     <node name="Running Processes" unique_id="8" prog_lang="custom-colors" tags="" readonly="0" \
+    #     custom_icon_id="18" is_bold="0" foreground="" ts_creation="0" ts_lastsave="1495714268">\n \
+    #     <rich_text underline="single" weight="heavy">Process List</rich_text>\n</node>\n \
+    #     <node name="Installed Applications" unique_id="10" prog_lang="custom-colors" tags="" readonly="0" \
+    #     custom_icon_id="18" is_bold="0" foreground="" ts_creation="0" ts_lastsave="1495714509">\n \
+    #     <rich_text underline="single" weight="heavy">Installed Applications</rich_text>\n</node>\n \
+    #     <node name="Users &amp; Groups" unique_id="11" prog_lang="custom-colors" tags="" \
+    #     readonly="0" custom_icon_id="18" is_bold="0" foreground="" ts_creation="0" ts_lastsave="1500474213">\n \
+    #     <rich_text underline="single" weight="heavy">Users</rich_text>\n<rich_text>\n\n\n</rich_text>\n \
+    #     <rich_text underline="single" weight="heavy">Groups</rich_text>\n</node>\n \
+    #     <node name="Network" unique_id="13" prog_lang="custom-colors" tags="" readonly="0" \
+    #     custom_icon_id="18" is_bold="0" foreground="" ts_creation="0" ts_lastsave="1500474223">\n \
+    #     <rich_text underline="single" weight="heavy">IPConfig\IFConfig</rich_text>\n<rich_text>\n\n\n</rich_text>\n \
+    #     <rich_text underline="single" weight="heavy">Network Processes</rich_text>\n<rich_text>\n\n\n</rich_text>\n \
+    #     <rich_text underline="single" weight="heavy">ARP</rich_text>\n<rich_text>\n\n\n\n</rich_text>\n \
+    #     <rich_text underline="single" weight="heavy">DNS</rich_text>\n<rich_text>\n\n\n\n</rich_text>\n \
+    #     <rich_text underline="single" weight="heavy">Route</rich_text>\n</node>\n \
+    #     <node name="Scheduled Jobs" unique_id="16" prog_lang="custom-colors" tags="" readonly="0" \
+    #     custom_icon_id="18" is_bold="0" foreground="" ts_creation="0" ts_lastsave="1496953428">\n \
+    #     <rich_text underline="single" weight="heavy">Scheduled Tasks</rich_text>\n</node>\n</node>\n \
+    #     <node name="Priv Escalation" unique_id="12" prog_lang="custom-colors" tags="" readonly="0" \
+    #     custom_icon_id="10" is_bold="0" foreground="" ts_creation="0" ts_lastsave="1500474606">\n \
+    #     <rich_text weight="heavy">Service Exploited:\n\n\nVulnerability Type:\n\n\nExploit POC:</rich_text>\n \
+    #     <rich_text>\n\n</rich_text>\n<rich_text weight="heavy">Description</rich_text>\n<rich_text>:\n\n</rich_text>\n \
+    #     <rich_text underline="single" weight="heavy">Discovery of Vulnerability</rich_text>\n<rich_text>\n\n\n\n</rich_text>\n \
+    #     <rich_text underline="single" weight="heavy">Exploit Code Used</rich_text>\n<rich_text>\n\n\n\n</rich_text>\n \
+    #     <rich_text underline="single" weight="heavy">Proof\Local.txt File</rich_text>\n<rich_text>\n \
+    #     ☐ Screenshot with ifconfig\ipconfig\n☐ Submit too OSCP Exam Panel\n</rich_text>\n</node>\n \
+    #     <node name="Goodies" unique_id="3" prog_lang="custom-colors" tags="" readonly="0" \
+    #     custom_icon_id="43" is_bold="0" foreground="" ts_creation="0" ts_lastsave="1492949508">\n \
+    #     <node name="Hashes" unique_id="9" prog_lang="custom-colors" tags="" readonly="0" custom_icon_id="18" \
+    #     is_bold="0" foreground="" ts_creation="0" ts_lastsave="1492949998"/>\n \
+    #     <node name="Passwords" unique_id="5" prog_lang="custom-colors" tags="" readonly="0" custom_icon_id="18" \
+    #     is_bold="0" foreground="" ts_creation="0" ts_lastsave="1492950150"/>\n \
+    #     <node name="Proof\Flags\Other" unique_id="6" prog_lang="custom-colors" tags="" readonly="0" \
+    #     custom_icon_id="18" is_bold="0" foreground="" ts_creation="0" ts_lastsave="1496953479"/>\n</node>\n \
+    #     <node name="Software Versions" unique_id="19" prog_lang="custom-colors" tags="" readonly="0" \
+    #     custom_icon_id="12" is_bold="0" foreground="" ts_creation="0" ts_lastsave="1603476230">\n \
+    #     <rich_text underline="single" weight="heavy">Software Versions</rich_text>\n<rich_text>\n\n\n\n</rich_text>\n \
+    #     <rich_text underline="single" weight="heavy">Potential Exploits</rich_text>\n</node>\n \
+    #     <node name="Methodology" unique_id="28" prog_lang="custom-colors" tags="" readonly="0" \
+    #     custom_icon_id="13" is_bold="1" foreground="" ts_creation="1496953072" ts_lastsave="1500474082">\n \
+    #     <rich_text underline="single" weight="heavy">Network Scanning</rich_text>\n<rich_text>\n\n \
+    #     ☐  nmap -sn 10.11.1.*\n☐  nmap -sL 10.11.1.*\n☐  nbtscan -r 10.11.1.0/24\n☐  </rich_text>\n \
+    #     <rich_text link="node 47">smbtree</rich_text>\n<rich_text>\n</rich_text>\n \
+    #     <rich_text underline="single" weight="heavy">Individual Host Scanning</rich_text>\n \
+    #     <rich_text>☐  nmap  --top-ports 20 --open -iL iplist.txt\n☐  nmap -sS -A -sV -O -p- ipaddress\n \
+    #     ☐  nmap -sU ipaddress\n\n</rich_text>\n \
+    #     <rich_text underline="single" weight="heavy">Service Scanning</rich_text>\n<rich_text>\n\n</rich_text>\n \
+    #     <rich_text weight="heavy">WebApp</rich_text>\n<rich_text>☐   </rich_text>\n \
+    #     <rich_text link="node 28">Nikto</rich_text>\n<rich_text>☐   </rich_text>\n \
+    #     <rich_text link="node 32">dirb</rich_text>\n<rich_text>☐   dirbuster\n☐   </rich_text>\n \
+    #     <rich_text link="node 30">wpscan</rich_text>\n<rich_text>☐   dotdotpwn\n☐   view source\n☐   davtest\cadevar \
+    #     ☐   droopscan\n☐   joomscan\n☐   LFI\RFI Test\n</rich_text>\n \
+    #     <rich_text weight="heavy">Linux\Windows</rich_text>\n<rich_text>☐   snmpwalk -c public -v1 </rich_text>\n \
+    #     <rich_text style="italic">ipaddress</rich_text>\n<rich_text> 1\n☐   smbclient -L //ipaddress\n \
+    #     ☐   showmount -e ipaddress port\n☐   rpcinfo\n☐   Enum4Linux\n</rich_text>\n \
+    #     <rich_text weight="heavy">Anything Else</rich_text>\n<rich_text>☐   </rich_text>\n \
+    #     <rich_text link="node 48">nmap scripts</rich_text>\n<rich_text> (locate *nse* | grep servicename)\n \
+    #     ☐   </rich_text><rich_text link="node 35">hydra</rich_text>\n<rich_text>☐   MSF Aux Modules\n \
+    #     ☐   Download the softward\n</rich_text>\n \
+    #     <rich_text underline="single" weight="heavy">Exploitation</rich_text>\n<rich_text> \
+    #     ☐   Gather Version Numbers\n☐   Searchsploit\n☐   Default Creds\n☐   Creds Previously Gathered\n \
+    #     ☐   Download the software\n</rich_text>\n \
+    #     <rich_text underline="single" weight="heavy">Post Exploitation</rich_text>\n<rich_text>\n</rich_text>\n \
+    #     <rich_text weight="heavy">Linux</rich_text>\n<rich_text>☐   linux-local-enum.sh\n \
+    #     ☐   linuxprivchecker.py\n☐   linux-exploit-suggestor.sh\n☐   unix-privesc-check.py\n</rich_text>\n \
+    #     <rich_text weight="heavy">Windows</rich_text>\n<rich_text>☐   wpc.exe\n☐   windows-exploit-suggestor.py\n \
+    #     ☐   </rich_text>\n<rich_text link="webs \
+    #     https://github.com/pentestmonkey/windows-privesc-check/blob/master/windows_privesc_check.py">\n \
+    #     windows_privesc_check.py</rich_text>\n<rich_text>☐  	windows-privesc-check2.exe\n</rich_text>\n \
+    #     <rich_text underline="single" weight="heavy">Priv Escalation</rich_text>\n<rich_text>☐  </rich_text>\n \
+    #     <rich_text link="node 36">acesss internal services (portfwd)</rich_text>\n<rich_text>☐  add account\n \
+    #     </rich_text>\n<rich_text weight="heavy">Windows</rich_text>\n<rich_text>☐  List of exploits\n</rich_text>\n \
+    #     <rich_text weight="heavy">Linux</rich_text>\n<rich_text>☐  sudo su\n☐  KernelDB\n☐  Searchsploit\n</rich_text>\n \
+    #     <rich_text underline="single" weight="heavy">Final</rich_text>\n<rich_text> \
+    #     ☐  Screenshot of IPConfig\WhoamI\n☐  Copy proof.txt\n☐  Dump hashes\n☐  Dump SSH Keys\n☐  Delete files</rich_text>\n \
+    #     \n</node>\n<node name="Log Book" unique_id="1" prog_lang="custom-colors" tags="" readonly="0" \
+    #     custom_icon_id="20" is_bold="1" foreground="" ts_creation="0" ts_lastsave="1495714168"/>\n</node>\n</cherrytree>'
 
     
-        with open(filename, "w") as f:
-            f.write(newCT)
-            f.close()
-        tree = ET.parse(filename)
-        root = tree.getroot()
-        indent(root)
-        tree.write(filename)
-    else:
-        tree = ET.parse(filename)
-        root = tree.getroot()
-        tcpnode = root.find('./node[@name="'+str(addy)+'"]/node[@name="Enumeration"]/node[@name="TCP"]')
-        newscan = ET.SubElement(tcpnode, 'rich_text')
-        newscan.text = data
-        indent(root)
-        tree.write(filename)
-    # print('Complete!')
+    #     with open(filename, "w") as f:
+    #         f.write(newCT)
+    #         f.close()
+    #     tree = ET.parse(filename)
+    #     root = tree.getroot()
+    #     indent(root)
+    #     tree.write(filename)
+    
+    # else:
+    #     tree = ET.parse(filename)
+    #     root = tree.getroot()
+    #     tcpnode = root.find('./node[@name="'+str(addy)+'"]/node[@name="Enumeration"]/node[@name="TCP"]')
+    #     newscan = ET.SubElement(tcpnode, 'rich_text')
+    #     newscan.text = data
+    #     indent(root)
+    #     tree.write(filename)
+    # # print('Complete!')
     return
 
 
