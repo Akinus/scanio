@@ -1113,11 +1113,11 @@ if __name__ == '__main__':
     Timer()
     update_progress()
     procnum = 20
-    if fulladd == True:
-        if len(final_ports) > 30000:
-            procnum = 100
-        elif len(final_ports) > 10000:
-            procnum = 50
+    # if fulladd == True:
+    #     if len(final_ports) > 30000:
+    #         procnum = 100
+    #     elif len(final_ports) > 10000:
+    #         procnum = 50
             
 
     try:
