@@ -22,6 +22,7 @@ import time
 import socket
 import threading
 import argparse
+import shutil
 import sys
 import os
 
@@ -703,18 +704,26 @@ def printall(addy):
                 for pp in sorted(plist):
                     spacelen = 5 - len(str(pp))
                     printtext = '\n|__ {0}'.format(pp)
-                    endlen = 70 - len(printtext)
-                    printtext = printtext + ' '*endlen
+                    tsize = str(shutil.get_terminal_size((80, 20))).split(',')[0].split('=')[1]
+                    # print('tsize = {0}'.format(int(tsize)))
+                    endlen = int(tsize) - len(printtext)
+                    pflag = 0
+                    
                     for b in root.findall('./subnet/[subnet-address = "'+naddy+'"]/host/[address = "'+ip+'"]/port/[number = "'+str(pp)+'"]/banner'):
                         if b.text:
                             banner = b.text
-                            printtext = '|__ {0} {1}-> {2}\n'.format(pp, '-'*spacelen, banner[:50])
+                            printtext = '\n|__ {0} {1}-> {2}'.format(pp, '-'*spacelen, banner[:50])
+                            pflag = 1
                     
                     for r in root.findall('./subnet/[subnet-address = "'+naddy+'"]/host/[address = "'+ip+'"]/port/[number = "'+str(pp)+'"]/robust'):
                         if r.text:
                             rb = r.text.splitlines()
                             rb = '\n     '.join(rb)
                             printtext = '\n|__ {0}'.format(rb)
+                            pflag = 1
+
+                    if pflag == 0:
+                        printtext = printtext + ' '*endlen
 
                     printret = '{0}{1}'.format(printret, printtext)         
                     plist.remove(pp)
@@ -744,20 +753,28 @@ def printall(addy):
                 for pp in sorted(plist):
                     spacelen = 5 - len(str(pp))
                     printtext = '\n|__ {0}'.format(pp)
-                    endlen = 70 - len(printtext)
-                    printtext = printtext + ' '*endlen
+                    tsize = str(shutil.get_terminal_size((80, 20))).split(',')[0].split('=')[1]
+                    # print('tsize = {0}'.format(int(tsize)))
+                    endlen = int(tsize) - len(printtext)
+                    pflag = 0
+                    
                     for b in root.findall('./subnet/[subnet-address = "'+naddy+'"]/host/[address = "'+ip+'"]/port/[number = "'+str(pp)+'"]/banner'):
                         if b.text:
                             banner = b.text
-                            printtext = '|__ {0} {1}-> {2}\n'.format(pp, '-'*spacelen, banner[:50])
+                            printtext = '\n|__ {0} {1}-> {2}'.format(pp, '-'*spacelen, banner[:50])
+                            pflag = 1
                     
                     for r in root.findall('./subnet/[subnet-address = "'+naddy+'"]/host/[address = "'+ip+'"]/port/[number = "'+str(pp)+'"]/robust'):
                         if r.text:
                             rb = r.text.splitlines()
                             rb = '\n     '.join(rb)
                             printtext = '\n|__ {0}'.format(rb)
+                            pflag = 1
 
-                    printret = '{0}\n{1}'.format(printret, printtext)         
+                    if pflag == 0:
+                        printtext = printtext + ' '*endlen
+
+                    printret = '{0}{1}'.format(printret, printtext)         
                     plist.remove(pp)
     return printret
 
