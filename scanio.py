@@ -294,7 +294,7 @@ def callScanNC(addy, tp):
     oi = addy.split(':')
     # print(oi)
     addy = oi[0]
-    robustTF = bool(oi[1])
+    robustTF = oi[1]
     # print('Address: {0}   Robust: {1}'.format(addy, str(robustTF)))
     try:
         tcp_args = ['timeout 0.5 /bin/bash -c "nc -nvzw1 '+str(addy)+' '+str(tp)+' 2>&1"']
@@ -310,7 +310,7 @@ def callScanNC(addy, tp):
         return result
 
     if "open" in result or "succ" in result:
-        if robustTF == True:
+        if robustTF == 'True':
             robust = robustScan(addy, tp)
         else:
             robust = None
@@ -337,7 +337,7 @@ def callScanP(addy, tp):
     oi = addy.split(':')
     # print(oi)
     addy = oi[0]
-    robustTF = bool(oi[1])
+    robustTF = oi[1]
     # print('Address: {0}   Robust: {1}'.format(addy, str(robustTF)))
     try:
         tcp_args = ['timeout 1 /bin/bash -c "exec echo > /dev/tcp/'+str(addy)+'/'+str(tp)+'";retval=$?;echo $retval']
@@ -348,7 +348,7 @@ def callScanP(addy, tp):
     except:
         result = 'Encountered and error while scanning {0}'.format(addy)
     if result == '0\n':
-        if robustTF == True:
+        if robustTF == 'True':
             robust = robustScan(addy, tp)
         else:
             robust = None
