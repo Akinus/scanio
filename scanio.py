@@ -320,7 +320,7 @@ def callScanNC(addy, tp):
         if robust == '':
             banner = bannerGrab(addy, tp)
         else:
-            banner = robust[14:100].replace('\n', ' ')
+            banner = robust[13:100].replace('\n', ' ').replace('   ', '')
         tree = ET.parse('scanio.xml')
         root = tree.getroot()
         hoste = root.find(addyStr)
@@ -361,7 +361,7 @@ def callScanP(addy, tp):
         if robust == '':
             banner = bannerGrab(addy, tp)
         else:
-            banner = robust[14:100].replace('\n', ' ')
+            banner = robust[13:100].replace('\n', ' ').replace('   ', '')
         tree = ET.parse('scanio.xml')
         root = tree.getroot()
         hoste = root.find(addyStr)
@@ -1137,7 +1137,7 @@ if __name__ == '__main__':
         elif len(final_ports) > 10000:
             procnum = 50
             
-    count = 0
+    count = 1
     try:
         for i in final_range:
             addy = str(net) + "." + str(i)
@@ -1163,8 +1163,8 @@ if __name__ == '__main__':
                     newZnote(addy, printext)
 
             if proxy:
-                if count == 3:
-                    count = 0
+                if count == 5:
+                    count = 1
                 else:
                     count += 1
                 time.sleep(count)
