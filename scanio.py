@@ -204,11 +204,6 @@ def addPort(addy, num, banner, robust):
         tree = ET.parse('scanio.xml')
         root = tree.getroot()
         host = root.find(addyStr)
-        rbl = robust.splitlines()
-        if len(rbl) > 5:
-            robust = '\n'.join(rbl[5:-3])
-        else:
-            robust = ''
         if search('ssh', banner):
             # print('SSH PORT FOUND!!')
             portnum = host.find('./port/[number="'+str(num)+'"]')
@@ -284,7 +279,12 @@ def robustScan(addy, port):
 
     if search('concurrent connection', out):
         out = ''
-
+    
+    rbl = out.splitlines()
+    if len(rbl) > 5:
+        out = '\n'.join(rbl[5:-3])
+    else:
+        out = ''
     return out
 
 
@@ -298,7 +298,7 @@ def callScanNC(addy, tp):
     robustTF = oi[1]
     # print('Address: {0}   Robust: {1}'.format(addy, str(robustTF)))
     try:
-        tcp_args = ['timeout 0.5 /bin/bash -c "nc -nvzw1 '+str(addy)+' '+str(tp)+' 2>&1"']
+        tcp_args = ['timeout 0.75 /bin/bash -c "nc -nvzw1 '+str(addy)+' '+str(tp)+' 2>&1"']
         tcp_res = sub.Popen(tcp_args, stdout = sub.PIPE, stderr = sub.PIPE, universal_newlines = True, shell = True)
         tcp_res.wait()
         result, err = tcp_res.communicate()
@@ -317,7 +317,10 @@ def callScanNC(addy, tp):
             robust = ''
         addyStr = './subnet/host/[address = "'+str(addy)+'"]'
         #Banner Grab
-        banner = bannerGrab(addy, tp)
+        if robust == '':
+            banner = bannerGrab(addy, tp)
+        else:
+            banner = robust[14:100].replace('\n', ' ')
         tree = ET.parse('scanio.xml')
         root = tree.getroot()
         hoste = root.find(addyStr)
@@ -355,7 +358,10 @@ def callScanP(addy, tp):
             robust = ''
         addyStr = './subnet/host/[address = "'+str(addy)+'"]'
         #Banner Grab
-        banner = bannerGrab(addy, tp)
+        if robust == '':
+            banner = bannerGrab(addy, tp)
+        else:
+            banner = robust[14:100].replace('\n', ' ')
         tree = ET.parse('scanio.xml')
         root = tree.getroot()
         hoste = root.find(addyStr)
@@ -395,193 +401,8 @@ def callScanW(addy, tp):
         currcount.value += 1
     return 1
 
-## prepare for port scans
-def initiate():
-    #Get Options
-    uinput = argparse.ArgumentParser()
-    uinput.add_argument("address", help = "REQUIRED: This address will be a 3-octet or a 4-octet address.'")
-    uinput.add_argument("-s", "--start", help = "Starting host number. The scan will begin at this host number.  Defaults to 1")
-    uinput.add_argument("-e", "--end", help = "Ending host number. The scan will stop at this number if included Defaults to 254 \
-                                               ***If this option is enabled, you cannot use -r or --range.***")
-    uinput.add_argument("-r", "--range", help = "The range of hosts. This can be a comma separated list or a range ie: 1-30. \
-                                                This can also be a CIDR. ie: /27 - for 30 hosts.  If a CIDR is used, the number \
-                                                of hosts will be added to the start.\
-                                                /30 = 2 hosts   /29 = 6 hosts \
-                                                /28 = 14 hosts  /27 = 30 hosts /26 = 62 hosts  /25 = 126 hosts \
-                                                 /24 = 254 hosts \
-                                                ***If this option is enabled, you cannot use -e or --end.***")
-    uinput.add_argument("-p", "--ports", help = "The ports to be scanned. Should be comma-separated or can be a range ie: 1-30.\
-                                                Defaults to list from: https://rb.gy/x86g6c")
-    uinput.add_argument("-c", "--clearlog", help = "Clears the log and starts fresh.", action="store_true")
-    uinput.add_argument("-f", "--fast", help = "Performs a fast scan using netcat vs the default /dev/tcp.  This option does have \
-                                                the potential to miss some ports.  REQUIRES NETCAT to be installed. \
-                                                ", action="store_true")
-    uinput.add_argument("--show", help = "Shows the currently logged results for the address.  When used with --map \
-                                            this will recreate the network map also", action="store_true")
-    uinput.add_argument("-m", "--map", help = "Creates a network map to a .graphml file \
-                                                Download yEd to edit scanio.graphml from https://www.yworks.com/products/yed", action="store_true")
-    uinput.add_argument("-nC", "--cnote", help = "Creates a new CherryTree note file with pre-determined template", action="store_true")
-    uinput.add_argument("-nZ", "--znote", help = "Creates a new Zim folder structure and templated notes", action="store_true")
-    uinput.add_argument("-rb", "--robust", help = "Runs NMAP -A on found ports. WARNING: THIS WILL DRASTICALLY SLOW \
-                                                DOWN THE SCAN. ***REQUIRES NMAP TO BE INSTALLED***", action="store_true")                                                
-
-    ipstart = 1
-    ipend = 254
-    fulladd = False
-    clearlog = False
-    netmap = False
-    robust = False
-    cNote = False
-    zNote = False
-
-    opts = uinput.parse_args()
-
-    net = opts.address
-    if opts.show:
-        printext = printall(net)
-        print(printext)
-        if opts.map:
-            netgraph()
-        sys.exit()
-
-    if len(net.split('.')) > 3:
-        fulladd = True
-        ipstart = int(net.split('.')[3])
-        ipend = int(net.split('.')[3])
-        net = '.'.join(net.split('.')[0:3])
-    
-    if opts.start and len(net.split('.')) < 3:
-        ipstart = int(opts.start)
-     
-    if opts.end and len(net.split('.')) < 3:
-        ipend = int(opts.end)
-        if opts.range != None:
-            print('You entered a full address, and/or provided an end/start host, and/or provided a range (or a combination thereof)')
-            sys.exit(2)
-
-    if opts.range:
-        iprange = opts.range
-        if opts.end != None and len(net.split('.')) <= 3:
-            print('You entered a full address, and/or provided an end/start host, and/or provided a range (or a combination thereof)')
-            sys.exit(2)
-        if "/30" in iprange:
-            ipend=ipstart+2
-            final_range = set()
-            for p in range(ipstart,ipend):
-                final_range.add(p)
-        elif "/29" in iprange:
-            ipend=ipstart+6
-            final_range = set()
-            for p in range(ipstart,ipend):
-                final_range.add(p)
-        elif "/28" in iprange:
-            ipend=ipstart+14
-            final_range = set()
-            for p in range(ipstart,ipend):
-                final_range.add(p)
-        elif "/27" in iprange:
-            ipend=ipstart+30
-            final_range = set()
-            for p in range(ipstart,ipend):
-                final_range.add(p)
-        elif "/26" in iprange:
-            ipend=ipstart+62
-            final_range = set()
-            for iport in range(ipstart,ipend):
-                final_range.add(iport)
-        elif "/25" in iprange:
-            ipend=ipstart+126
-            final_range = set()
-            for p in range(ipstart,ipend):
-                final_range.add(p)
-        elif "/24" in iprange:
-            ipend=ipstart+254
-            final_range = set()
-            for p in range(ipstart,ipend+1):
-                final_range.add(p)
-        else:
-            final_range = parseRange(iprange)
-    else:
-        final_range = set()
-        for p in range(ipstart,ipend+1):
-            final_range.add(p)
-
-    if opts.ports:
-        uports = opts.ports
-        pports = uports
-    else:
-        uports = "20-25,50-53,67-69,80,110,119,123,135-139,143,161,162,389,443,989,990,3389,2222,4444,8080"
-        pports = 'from https://rb.gy/x86g6c (plus some custom): \n|    {0}'.format(uports)
-    final_ports = parseRange(uports)
-
-    hostnum = len(final_range)
-    if hostnum <= 1:
-        phostvar = 'Scanning host {0}.{1}'.format(net, str(min(final_range)))
-    elif hostnum > 1:
-        phostvar = 'Scanning hosts {0}.{1} to {0}.{2}'.format(net, str(min(final_range)), str(max(final_range)))
-    totalscans = hostnum*len(final_ports)
-    
-    if opts.fast:
-        operation = callScanNC
-        totaltime = totalscans / 18
-    elif os.name == 'nt':
-        operation = callScanW
-    else:
-        operation = callScanP
-        totaltime = totalscans / 12
-
-    mon, sec = divmod(float(totaltime), 60)
-    mon = "{:.0f}".format(mon)
-    sec = "{:.0f}".format(sec)
-
-    print('| {0} Total Scans. Approximately {1}m {2}s'.format(totalscans, mon, sec))
-    print('|--> {0}'.format(phostvar))
-    print('|--> Scanning ports {0}'.format(pports))        
-        
-    tree = ET.parse('scanio.xml')
-    root = tree.getroot()
-    subnetstr = './subnet/[subnet-address = "'+net+'"]'
-    subnet = root.find(subnetstr)
-    if subnet == None:
-        addSubnet(net)
-    
-    if opts.fast:
-        operation = callScanNC
-    elif os.name == 'nt':
-        operation = callScanW
-    else:
-        operation = callScanP
-
-    if fulladd == True:
-        printnet = '{0}.{1}'.format(net, min(final_range))
-    else:
-        printnet = net
-
-    if opts.map:
-        print('|--> Will create a network map to scanio.graphml in current directory...')
-        print('|    Download yEd to edit scanio.graphml from https://www.yworks.com/products/yed')
-        netmap = True
-
-    if opts.cnote:
-        print('|--> Will create/modify a CherryTree file for each/this host in current directory...')
-        cNote = True
-
-    if opts.znote:
-        print('|--> Will create/modify Directories for notes (Zim) file for each/this host in current directory...')
-        zNote = True
-    
-    if opts.clearlog:
-        print('|--> The current log will be cleared and recreated as well as the TCP enumeration of each host.')
-        clearlog = True
-                
-    if opts.robust:
-        print('|--> Will perform NMAP Robust scan on found ports')
-        robust = True
-
-    return operation, net, final_range, final_ports, totalscans, printnet, clearlog, netmap, robust, cNote, zNote, fulladd
-
 def netgraph():
-    print('\nCreating network map...')
+    # print('\nCreating network map...')
 
     G = pyyed.Graph()
     # f = plt.figure()
@@ -617,9 +438,9 @@ def netgraph():
                 for b in root.findall('./subnet/[subnet-address = "'+sa+'"]/host/[address = "'+addy+'"]/port/[number = "'+str(var)+'"]/banner'):
                     if b.text:
                         banner = b.text
-                        portext = '{0} --> {1}'.format(port, banner[:10])   
+                        portext = '{0} --> {1}'.format(port, banner[:20])   
                     else:
-                        portext = '{0}     {1}'.format(port, ' '*20)
+                        portext = '{0}     {1}'.format(port, ' '*30)
                 portnums = '{0}\n{1}'.format(portnums, portext)
                 plist.remove(var)  
 
@@ -633,7 +454,7 @@ def netgraph():
     with open('scanio.graphml', 'w') as fp:
         fp.write(G.get_graph())
 
-    print('Complete!')
+    # print('Complete!')
     return
 
 def sortXML(addy):
@@ -642,6 +463,7 @@ def sortXML(addy):
         naddy = '{0}.{1}.{2}'.format(laddy[0], laddy[1], laddy[2])
     else:
         naddy = addy
+    # naddy = addy
 
     tree = ET.parse('scanio.xml')
     root = tree.getroot()
@@ -672,13 +494,17 @@ def sortXML(addy):
                     key = numv.findtext("number")
                     pdata.append((int(hostaddstr+key), numv))
         pdata.sort()
-        subnethosts[:] = [item[-1] for item in pdata]     
+        subnethosts[:] = [item[-1] for item in pdata]
+        addyfindstr = './subnet/[subnet-address = "'+naddy+'"]/host/[address = "'+addy+'"]'
+        if root.find(addyfindstr):
+            retvalue = 0
+        else:
+            retvalue = 1
         indent(root)
         tree.write("scanio.xml")
-     
-        return 0
     else:
-        return 1
+        retvalue = 1 
+    return retvalue
 
 def printall(addy):
     if len(addy.split('.')) > 3:
@@ -1071,6 +897,197 @@ def newCnote(addy, data):
     # print('Complete!')
     return
 
+## prepare for port scans
+def initiate():
+    #Get Options
+    uinput = argparse.ArgumentParser()
+    uinput.add_argument("address", help = "REQUIRED: This address will be a 3-octet or a 4-octet address.'")
+    uinput.add_argument("-s", "--start", help = "Starting host number. The scan will begin at this host number.  Defaults to 1")
+    uinput.add_argument("-e", "--end", help = "Ending host number. The scan will stop at this number if included Defaults to 254 \
+                                               ***If this option is enabled, you cannot use -r or --range.***")
+    uinput.add_argument("-r", "--range", help = "The range of hosts. This can be a comma separated list or a range ie: 1-30. \
+                                                This can also be a CIDR. ie: /27 - for 30 hosts.  If a CIDR is used, the number \
+                                                of hosts will be added to the start.\
+                                                /30 = 2 hosts   /29 = 6 hosts \
+                                                /28 = 14 hosts  /27 = 30 hosts /26 = 62 hosts  /25 = 126 hosts \
+                                                 /24 = 254 hosts \
+                                                ***If this option is enabled, you cannot use -e or --end.***")
+    uinput.add_argument("-p", "--ports", help = "The ports to be scanned. Should be comma-separated or can be a range ie: 1-30.\
+                                                Defaults to list from: https://rb.gy/x86g6c")
+    uinput.add_argument("-c", "--clearlog", help = "Clears the log and starts fresh.", action="store_true")
+    uinput.add_argument("-f", "--fast", help = "Performs a fast scan using netcat vs the default /dev/tcp.  This option does have \
+                                                the potential to miss some ports.  REQUIRES NETCAT to be installed. \
+                                                ", action="store_true")
+    uinput.add_argument("--show", help = "Shows the currently logged results for the address.  When used with --map \
+                                            this will recreate the network map also", action="store_true")
+    uinput.add_argument("-m", "--map", help = "Creates a network map to a .graphml file \
+                                                Download yEd to edit scanio.graphml from https://www.yworks.com/products/yed", action="store_true")
+    uinput.add_argument("-nC", "--cnote", help = "Creates a new CherryTree note file with pre-determined template", action="store_true")
+    uinput.add_argument("-nZ", "--znote", help = "Creates a new Zim folder structure and templated notes", action="store_true")
+    uinput.add_argument("-pc", "--proxychains", help = "Changes the network saturation to try and avoid the \
+                                                'too many files open' error", action="store_true")
+    uinput.add_argument("-rb", "--robust", help = "Runs NMAP -A on found ports. WARNING: THIS WILL DRASTICALLY SLOW \
+                                                DOWN THE SCAN. ***REQUIRES NMAP TO BE INSTALLED***", action="store_true")                                                
+
+    ipstart = 1
+    ipend = 254
+    fulladd = False
+    clearlog = False
+    netmap = False
+    robust = False
+    cNote = False
+    zNote = False
+    proxy = False
+
+    opts = uinput.parse_args()
+
+    net = opts.address
+    if opts.show:
+        printext = printall(net)
+        print(printext)
+        if opts.map:
+            netgraph()
+        sys.exit()
+
+    if len(net.split('.')) > 3:
+        fulladd = True
+        ipstart = int(net.split('.')[3])
+        ipend = int(net.split('.')[3])
+        net = '.'.join(net.split('.')[0:3])
+    
+    if opts.start and len(net.split('.')) < 3:
+        ipstart = int(opts.start)
+     
+    if opts.end and len(net.split('.')) < 3:
+        ipend = int(opts.end)
+        if opts.range != None:
+            print('You entered a full address, and/or provided an end/start host, and/or provided a range (or a combination thereof)')
+            sys.exit(2)
+
+    if opts.range:
+        iprange = opts.range
+        if opts.end != None and len(net.split('.')) <= 3:
+            print('You entered a full address, and/or provided an end/start host, and/or provided a range (or a combination thereof)')
+            sys.exit(2)
+        if "/30" in iprange:
+            ipend=ipstart+2
+            final_range = set()
+            for p in range(ipstart,ipend):
+                final_range.add(p)
+        elif "/29" in iprange:
+            ipend=ipstart+6
+            final_range = set()
+            for p in range(ipstart,ipend):
+                final_range.add(p)
+        elif "/28" in iprange:
+            ipend=ipstart+14
+            final_range = set()
+            for p in range(ipstart,ipend):
+                final_range.add(p)
+        elif "/27" in iprange:
+            ipend=ipstart+30
+            final_range = set()
+            for p in range(ipstart,ipend):
+                final_range.add(p)
+        elif "/26" in iprange:
+            ipend=ipstart+62
+            final_range = set()
+            for iport in range(ipstart,ipend):
+                final_range.add(iport)
+        elif "/25" in iprange:
+            ipend=ipstart+126
+            final_range = set()
+            for p in range(ipstart,ipend):
+                final_range.add(p)
+        elif "/24" in iprange:
+            ipend=ipstart+254
+            final_range = set()
+            for p in range(ipstart,ipend+1):
+                final_range.add(p)
+        else:
+            final_range = parseRange(iprange)
+    else:
+        final_range = set()
+        for p in range(ipstart,ipend+1):
+            final_range.add(p)
+
+    if opts.ports:
+        uports = opts.ports
+        pports = uports
+    else:
+        uports = "20-25,50-53,67-69,80,110,119,123,135-139,143,161,162,389,443,989,990,3389,2222,4444,8080"
+        pports = 'from https://rb.gy/x86g6c (plus some custom): \n|    {0}'.format(uports)
+    final_ports = parseRange(uports)
+
+    hostnum = len(final_range)
+    if hostnum <= 1:
+        phostvar = 'Scanning host {0}.{1}'.format(net, str(min(final_range)))
+    elif hostnum > 1:
+        phostvar = 'Scanning hosts {0}.{1} to {0}.{2}'.format(net, str(min(final_range)), str(max(final_range)))
+    totalscans = hostnum*len(final_ports)
+    
+    if opts.fast:
+        operation = callScanNC
+        totaltime = totalscans / 18
+    elif os.name == 'nt':
+        operation = callScanW
+    else:
+        operation = callScanP
+        totaltime = totalscans / 12
+
+    mon, sec = divmod(float(totaltime), 60)
+    mon = "{:.0f}".format(mon)
+    sec = "{:.0f}".format(sec)
+
+    print('| {0} Total Scans. Approximately {1}m {2}s'.format(totalscans, mon, sec))
+    print('|--> {0}'.format(phostvar))
+    print('|--> Scanning ports {0}'.format(pports))        
+        
+    tree = ET.parse('scanio.xml')
+    root = tree.getroot()
+    subnetstr = './subnet/[subnet-address = "'+net+'"]'
+    subnet = root.find(subnetstr)
+    if subnet == None:
+        addSubnet(net)
+    
+    if opts.fast:
+        operation = callScanNC
+    elif os.name == 'nt':
+        operation = callScanW
+    else:
+        operation = callScanP
+
+    if fulladd == True:
+        printnet = '{0}.{1}'.format(net, min(final_range))
+    else:
+        printnet = net
+
+    if opts.map:
+        print('|--> Will create a network map to scanio.graphml in current directory...')
+        print('|    Download yEd to edit scanio.graphml from https://www.yworks.com/products/yed')
+        netmap = True
+
+    if opts.cnote:
+        print('|--> Will create/modify a CherryTree file for each/this host in current directory...')
+        cNote = True
+
+    if opts.znote:
+        print('|--> Will create/modify Directories for notes (Zim) file for each/this host in current directory...')
+        zNote = True
+    
+    if opts.clearlog:
+        print('|--> The current log will be cleared and recreated as well as the TCP enumeration of each host.')
+        clearlog = True
+                
+    if opts.robust:
+        print('|--> Will perform NMAP Robust scan on found ports')
+        robust = True
+    
+    if opts.proxychains:
+        print('|--> Will adjust traffic to avoid proxychains network saturation')
+        proxy = True
+
+    return operation, net, final_range, final_ports, totalscans, printnet, clearlog, netmap, robust, cNote, zNote, fulladd, proxy
 
 def init(args):
     ''' store the counter for later use '''
@@ -1100,6 +1117,7 @@ if __name__ == '__main__':
     cnote = scanInfo[9]
     znote = scanInfo[10]
     fulladd = scanInfo[10]
+    proxy = scanInfo[11]
 
     contVar = input('Continue? Y/N (default y): ')
     if contVar != 'Y' and contVar != 'Yes' and contVar != 'yes' and contVar != 'y' and contVar != '':
@@ -1112,14 +1130,14 @@ if __name__ == '__main__':
 
     Timer()
     update_progress()
-    procnum = 20
-    # if fulladd == True:
-    #     if len(final_ports) > 30000:
-    #         procnum = 100
-    #     elif len(final_ports) > 10000:
-    #         procnum = 50
+    procnum = 30
+    if fulladd == True:
+        if len(final_ports) > 30000:
+            procnum = 100
+        elif len(final_ports) > 10000:
+            procnum = 50
             
-
+    count = 0
     try:
         for i in final_range:
             addy = str(net) + "." + str(i)
@@ -1133,6 +1151,8 @@ if __name__ == '__main__':
             else:
                 printext = printall(addy)
                 print(printext)
+                if netmap:
+                    netgraph()
                 if cnote:
                     if clearlog:
                         clearCNote(addy)
@@ -1141,7 +1161,13 @@ if __name__ == '__main__':
                     if clearlog:
                         clearZNote(addy)
                     newZnote(addy, printext)
-                
+
+            if proxy:
+                if count == 3:
+                    count = 0
+                else:
+                    count += 1
+                time.sleep(count)
 
     except KeyboardInterrupt:
         print('\n\n\t\t!!! SCAN INTERRUPTED !!!\n')
@@ -1162,7 +1188,7 @@ if __name__ == '__main__':
     print('\n\n\t\t*** SCAN COMPLETE *** ')
     logVars = sortXML(printnet)
     if logVars == 1:
-        print('\nNo Hosts Found...')
+        # print('\nNo Hosts Found...')
         sys.exit(2)
     else:
         # printall(printnet)
