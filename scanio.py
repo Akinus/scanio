@@ -207,7 +207,7 @@ def addPort(addy, num, banner, robust):
         if len(rbl) > 5:
             robust = '\n'.join(rbl[5:-3])
         else:
-            robust = None
+            robust = ''
         if search('ssh', banner):
             # print('SSH PORT FOUND!!')
             portnum = host.find('./port/[number="'+str(num)+'"]')
@@ -313,7 +313,7 @@ def callScanNC(addy, tp):
         if robustTF == 'True':
             robust = robustScan(addy, tp)
         else:
-            robust = None
+            robust = ''
         addyStr = './subnet/host/[address = "'+str(addy)+'"]'
         #Banner Grab
         banner = bannerGrab(addy, tp)
@@ -351,7 +351,7 @@ def callScanP(addy, tp):
         if robustTF == 'True':
             robust = robustScan(addy, tp)
         else:
-            robust = None
+            robust = ''
         addyStr = './subnet/host/[address = "'+str(addy)+'"]'
         #Banner Grab
         banner = bannerGrab(addy, tp)
@@ -678,7 +678,7 @@ def printall(addy):
         laddy = addy.split('.')
         naddy = '{0}.{1}.{2}'.format(laddy[0], laddy[1], laddy[2])
         ip = '{0}.{1}.{2}.{3}'.format(laddy[0], laddy[1], laddy[2], laddy[3])
-
+        printret = ''
         tree = ET.parse('scanio.xml')
         root = tree.getroot()
         subnetstr = './subnet/[subnet-address = "'+naddy+'"]'
