@@ -298,7 +298,7 @@ def callScanNC(addy, tp):
     robustTF = oi[1]
     # print('Address: {0}   Robust: {1}'.format(addy, str(robustTF)))
     try:
-        tcp_args = ['timeout 0.75 /bin/bash -c "nc -nvzw1 '+str(addy)+' '+str(tp)+' 2>&1"']
+        tcp_args = ['timeout 1 /bin/bash -c "nc -nvzw1 '+str(addy)+' '+str(tp)+' 2>&1"']
         tcp_res = sub.Popen(tcp_args, stdout = sub.PIPE, stderr = sub.PIPE, universal_newlines = True, shell = True)
         tcp_res.wait()
         result, err = tcp_res.communicate()
