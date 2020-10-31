@@ -731,7 +731,15 @@ def newZnote(addy, data):
     filepath = addypath + sep + 'Methodology.txt'
     open(filepath, 'w').write(text)
     filepath = addypath + sep + 'Post_Exploitation.txt'
+    pefilepath = pepath + sep + 'Files.txt'
+    pedirpath = pepath + sep + 'Directories.txt'
+    peuserpath = pepath + sep + 'Users.txt'
+    pelogpath = pepath + sep + 'Logs.txt'
     open(filepath, 'w').write(' ')
+    open(pefilepath, 'w').write(' ')
+    open(pedirpath, 'w').write(' ')
+    open(peuserpath, 'w').write(' ')
+    open(pelogpath, 'w').write(' ')
     text='Content-Type: text/x-zim-wiki\nWiki-Format: zim 0.4\n\n**Service Exploited:  **\n\n**Vulnerability Type:**\n\n**Exploit POC:**\
 \n\n**Description: **\n\n**Discovery of Vulnerability**\n\n\n\n\n\n\n**Exploit Code Used**\n\n\n\n\n\n\n**Proof/Local.txt File**\
 \n\n[ ] **Screenshot with ifconfig\ipconfig**\n[ ] **Submit to OSCP Exam Panel**'
