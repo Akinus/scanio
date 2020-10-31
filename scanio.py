@@ -707,7 +707,11 @@ def newZnote(addy, data):
     filepath = addypath + sep + 'Exploitation.txt'
     open(filepath, 'w').write(text)
     filepath = addypath + sep + 'Goodies.txt'
+    credpath = goodpath + sep + 'Credentials.txt'
+    proofpath = goodpath + sep + 'Proof.txt'
     open(filepath, 'w').write(' ')
+    open(credpath, 'w').write(' ')
+    open(proofpath, 'w').write(' ')
     filepath = addypath + sep + 'Log_Book.txt'
     open(filepath, 'w').write(' ')
 
