@@ -718,8 +718,8 @@ def newZnote(addy, data):
     open(filepath, 'w').write(' ')
     open(credpath, 'w').write(' ')
     open(proofpath, 'w').write(' ')
-    filepath = addypath + sep + 'Log_Book.txt'
-    open(filepath, 'w').write(' ')
+    # filepath = addypath + sep + 'Log_Book.txt'
+    # open(filepath, 'w').write(' ')
 
     text='Content-Type: text/x-zim-wiki\nWiki-Format: zim 0.4\n\n**Network Scanning**\n[ ] nmap -sn 10.11.1.*\n[ ] nmap -sL 10.11.1.*\n\
 [ ] nbtscan -r 10.11.1.0/24\n[ ] smbtree\n\nIndividual Host Scanning\n\n[ ] nmap  --top-ports 20 --open -iL iplist.txt\n\
