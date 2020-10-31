@@ -699,6 +699,12 @@ def newZnote(addy, data):
         # else:
             # print ("Successfully created the directory %s " % path)
 
+    enumtextpath = addy + sep + 'Enumeration.txt'
+    enumtext = 'Content-Type: text/x-zim-wiki\nWiki-Format: zim 0.6\nCreation-Date: 2020-10-31T13:28:33-04:00\
+====== Enumeration ======\nCreated Saturday 31 October 2020\n\
+1. [[Enumeration:TCP|TCP Enumeration]]\n2. [[Enumeration:gobuster|gobuster Results]]\
+3. [[Enumeration:nikto|Nikto Results]]\n4. [[Enumeration:NMAP|NMAP Enumeration]]'
+    open(enumtextpath, 'w').write(enumtext)
     datapath = enumpath + sep + 'TCP.txt'
     open(datapath, 'w').write(data)
     text = 'Content-Type: text/x-zim-wiki\nWiki-Format: zim 0.4\n\n**Service Exploited:  **\n\n**Vulnerability Type:**\n\n \
