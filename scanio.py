@@ -690,6 +690,7 @@ def newZnote(addy, data):
 2. [[+Network Enumeration:Nikto|Nikto]]\n\
 3. [[+Network_Enumeration:Gobuster|Gobuster]]\n\
 4. [[+Network_Enumeration:NMAP|NMAP]]\n\
+5. [[+Network_Enumeration:WPScan|WPScan]]\n\
 \n\
 ==== Individual Host Enumeration ====\n\
 1. [[+Host_Enumeration:Linpeas|Linpeas.sh]]\n\
