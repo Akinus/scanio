@@ -683,77 +683,51 @@ def newZnote(addy, data):
     # else:
         # print ("Successfully created the directory %s " % addypath)
 
-    enumpath = addypath + sep + 'Enumeration'
+    text='Content-Type: text/x-zim-wiki\nWiki-Format: zim 0.4\nCreation-Date: 2020-11-01T13:29:00-08:00\n\
+====== Methodology ======\nCreated Sunday 01 November 2020\n\n\
+==== Network Enumeration: ====\n\
+1. [[+Network_Enumeration:TCP|TCP]]\n\
+2. [[+Network Enumeration:Nikto|Nikto]]\n\
+3. [[+Network_Enumeration:Gobuster|Gobuster]]\n\
+4. [[+Network_Enumeration:NMAP|NMAP]]\n\
+\n\
+==== Individual Host Enumeration ====\n\
+1. [[+Host_Enumeration:Linpeas|Linpeas.sh]]\n\
+2. [[+Host_Enumeration:Enum4Linux|Enum4Linux]]\n\
+3. [[+Host_Enumeration:Writable_files|Writable Files]]\n\
+4. [[+Host_Enumeration:Writable Folders|Writable Folders]]\n\
+5. [[+Host_Enumeration:Running_Processes|Running Processes]]\n\
+6. [[+Host_Enumeration:Users|Users]]\n\
+7. [[+Host_Enumeration:Groups|Groups]]\n\
+8. [[+Host_Enumeration:Interesting Places and Files|Interesting Places and Files]]\n\
+\n\
+==== Privilege Escalation ====\n\
+1. [[+Privilege Escalation:Searchsploit (exploit-db)|Searchsploit (exploit-db)]]\n\
+2. [[+Privilege Escalation:Sudo -l|Sudo -l]]\n\
+3. [[+Privilege Escalation:Metasploit|Metasploit]]\n\
+\n\
+==== Proof ====\n\
+1. [[+Proof:Hashes|Hashes]]\n\
+2. [[+Proof:Credentials|Credentials]]\n\
+3. [[+Proof:Screenshots|Screenshots]]\n\
+4. [[+Proof:Proof-of-root Screenshots|Proof-of-root Screenshots]]'\n\
+    filepath = addypath + sep + 'Methodology.txt'
+    open(filepath, 'w').write(text)
+
+    enumpath = addypath + sep + 'Methodology' + sep + 'Network_Enumeration'
     paths.append(enumpath)
-    goodpath = addypath + sep + 'Goodies'
-    paths.append(goodpath)
-    pepath = addypath + sep + 'Post_Exploitation'
-    paths.append(pepath)
 
     for path in paths:
         try:
             if os.path.exists(path) == False:
-                os.mkdir(path)
+                os.makedirs(path)
         except OSError:
             print ("Creation of the directory %s failed" % path)
         # else:
             # print ("Successfully created the directory %s " % path)
 
-    enumtextpath = addy + sep + 'Enumeration.txt'
-    enumtext = 'Content-Type: text/x-zim-wiki\nWiki-Format: zim 0.6\nCreation-Date: 2020-10-31T13:28:33-04:00\
-====== Enumeration ======\nCreated Saturday 31 October 2020\n\
-1. [[Enumeration:TCP|TCP Enumeration]]\n2. [[Enumeration:gobuster|gobuster Results]]\
-3. [[Enumeration:nikto|Nikto Results]]\n4. [[Enumeration:NMAP|NMAP Enumeration]]'
-    open(enumtextpath, 'w').write(enumtext)
     datapath = enumpath + sep + 'TCP.txt'
     open(datapath, 'w').write(data)
-    text = 'Content-Type: text/x-zim-wiki\nWiki-Format: zim 0.4\n\n**Service Exploited:  **\n\n**Vulnerability Type:**\n\n \
-**Exploit POC:**\n\n**Description: **\n\n\n\n**Discovery of Vulnerability**\n\n\n\n\n**Exploit Code Used**\n\n\n\n\n\n\n**Proof/Local.txt File** \
-\n[ ] Screenshot with ifconfig/ipconfig\n[ ] Submit too OSCP Exam Panel'
-    filepath = addypath + sep + 'Exploitation.txt'
-    open(filepath, 'w').write(text)
-    filepath = addypath + sep + 'Goodies.txt'
-    credpath = goodpath + sep + 'Credentials.txt'
-    proofpath = goodpath + sep + 'Proof.txt'
-    open(filepath, 'w').write(' ')
-    open(credpath, 'w').write(' ')
-    open(proofpath, 'w').write(' ')
-    # filepath = addypath + sep + 'Log_Book.txt'
-    # open(filepath, 'w').write(' ')
-
-    text='Content-Type: text/x-zim-wiki\nWiki-Format: zim 0.4\n\n**Network Scanning**\n[ ] nmap -sn 10.11.1.*\n[ ] nmap -sL 10.11.1.*\n\
-[ ] nbtscan -r 10.11.1.0/24\n[ ] smbtree\n\nIndividual Host Scanning\n\n[ ] nmap  --top-ports 20 --open -iL iplist.txt\n\
-[ ] nmap -sS -A -sV -O -p- ipaddress\n[ ] nmap -sU ipaddress\n\nService Scanning\n\n\tWebApp\n\t[ ] Nikto\n\t[ ] dirb\n\t[ ] dirbuster\n\
-[ ] wpscan\n\t[ ] dotdotpwn\n\t[ ] view source\n\t[ ] davtest\cadevar\n\t[ ] droopscan\n\t[ ] joomscan\n\t[ ] LFI/RFI Test\n\t\n\n\n\
-\tLinux/Windows\n\t[ ] snmpwalk -c public -v1 ipaddress 1\n\t[ ] smbclient -L //ipaddress\n\t[ ] showmount -e ipaddress port\
-\n\t[ ] rpcinfo\n\t[ ] Enum4Linux\n\n\tAnything Else\n\t[ ] nmap scripts (locate *nse* | grep servicename)\n\t[ ] hydra\n\t\
-[ ] MSF Aux Modules\n\t[ ] Download the software\n\t\nExploitation\n[ ] Gather Version Numbes\n[ ] Searchsploit\n\
-[ ] Default Creds\n[ ] Creds Previously Gathered\n[ ] Download the software\nPost Exploitation\n\tLinux\n\t[ ] linux-local-enum.sh\
-\n\t[ ] linuxprivchecker.py\n\t[ ] linux-exploit-suggestor.sh\n\t[ ] unix-privesc-check.py\n\n\tWindows\n\t[ ] wpc.exe\n\t\
-[ ] windows-exploit-suggestor.py\n\t[ ] windows_privesc_check.py\n\t[ ] windows-privesc-check2.exe\nPriv Escalation\n\t\
-[ ] acesss internal services (portfwd)\n\t[ ] add account\n\n\tWindows\n\t\t[ ] List of exploits\n\n\tLinux\n\t\t[ ] sudo su\
-\n\t\t[ ] KernelDB\n\t\t[ ] Searchsploit\n\nFinal\n[ ] Screenshot of IPConfig\WhoamI\n[ ] Copy proof.txt\n[ ] Dump hashes\n\
-[ ] Dump SSH Keys\n[ ] Delete files'
-    filepath = addypath + sep + 'Methodology.txt'
-    open(filepath, 'w').write(text)
-    filepath = addypath + sep + 'Post_Exploitation.txt'
-    pefilepath = pepath + sep + 'Files.txt'
-    pedirpath = pepath + sep + 'Directories.txt'
-    peuserpath = pepath + sep + 'Users.txt'
-    pelogpath = pepath + sep + 'Logs.txt'
-    open(filepath, 'w').write(' ')
-    open(pefilepath, 'w').write(' ')
-    open(pedirpath, 'w').write(' ')
-    open(peuserpath, 'w').write(' ')
-    open(pelogpath, 'w').write(' ')
-    text='Content-Type: text/x-zim-wiki\nWiki-Format: zim 0.4\n\n**Service Exploited:  **\n\n**Vulnerability Type:**\n\n**Exploit POC:**\
-\n\n**Description: **\n\n**Discovery of Vulnerability**\n\n\n\n\n\n\n**Exploit Code Used**\n\n\n\n\n\n\n**Proof/Local.txt File**\
-\n\n[ ] **Screenshot with ifconfig\ipconfig**\n[ ] **Submit to OSCP Exam Panel**'
-    filepath = addypath + sep + 'Priv_Escalation.txt'
-    open(filepath, 'w').write(text)
-    text='Content-Type: text/x-zim-wiki\nWiki-Format: zim 0.4\n\n**Software Versions**\n\n\n\n\n\n\n**Potential Exploits**'
-    filepath = addypath + sep + 'Software_Versions.txt'
-    open(filepath, 'w').write(text)
     return
 
 def newCnote(addy, data):
