@@ -711,7 +711,7 @@ def newZnote(addy, data):
 1. [[+Proof:Hashes|Hashes]]\n\
 2. [[+Proof:Credentials|Credentials]]\n\
 3. [[+Proof:Screenshots|Screenshots]]\n\
-4. [[+Proof:Proof-of-root Screenshots|Proof-of-root Screenshots]]'\n\
+4. [[+Proof:Proof-of-root Screenshots|Proof-of-root Screenshots]]'
     filepath = addypath + sep + 'Methodology.txt'
     open(filepath, 'w').write(text)
 
