@@ -1125,7 +1125,11 @@ if __name__ == '__main__':
     update_progress()
     procnum = 30
     if fulladd == True:
+        if len(final_ports) > 40000:
+            procnum = 200
         if len(final_ports) > 30000:
+            procnum = 150
+        if len(final_ports) > 20000:
             procnum = 100
         elif len(final_ports) > 10000:
             procnum = 50
