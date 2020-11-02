@@ -701,12 +701,14 @@ def newZnote(addy, data):
 ==== Individual Host Enumeration ====\n\
 1. [[+Host_Enumeration:Linpeas|Linpeas.sh]]\n\
 2. [[+Host_Enumeration:Enum4Linux|Enum4Linux]]\n\
-3. [[+Host_Enumeration:Writable_files|Writable Files]]\n\
+3. [[+Host_Enumeration:Writable_Files|Writable Files]]\n\
 4. [[+Host_Enumeration:Writable Folders|Writable Folders]]\n\
 5. [[+Host_Enumeration:Running_Processes|Running Processes]]\n\
 6. [[+Host_Enumeration:Users|Users]]\n\
 7. [[+Host_Enumeration:Groups|Groups]]\n\
 8. [[+Host_Enumeration:Interesting Places and Files|Interesting Places and Files]]\n\
+9. [[+Host_Enumeration:Connections|Connections]]\n\
+10.[[+Host_Enumeration:SUID|SUID]]\n\
 \n\
 ==== Privilege Escalation ====\n\
 1. [[+Privilege Escalation:Searchsploit (exploit-db)|Searchsploit (exploit-db)]]\n\
