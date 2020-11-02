@@ -674,7 +674,13 @@ def newZnote(addy, data):
     opath = os.getcwd()
     addypath = opath + sep + addy
     addyfile = addy + '.txt'
-    open(addyfile, 'w').write(cherrylink)
+    ipheader = 'Content-Type: text/x-zim-wiki\nWiki-Format: zim 0.4\nCreation-Date: 2020-10-28T20:13:55-07:00\
+====== ' + addy + ' ======\nCreated Wednesday 28 October 2020\n'
+    with open(addyfile, 'w') as fp:
+        fp.write(ipheader)
+        fp.write(cherrylink)
+        fp.close()
+
     try:
         if os.path.exists(addypath) == False:
             os.mkdir(addypath)
