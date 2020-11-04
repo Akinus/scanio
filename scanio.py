@@ -1139,7 +1139,7 @@ if __name__ == '__main__':
             procnum = 150
         if len(final_ports) > 20000:
             procnum = 100
-        elif len(final_ports) > 10000:
+        elif len(final_ports) > 1024:
             procnum = 50
             
     count = 1
