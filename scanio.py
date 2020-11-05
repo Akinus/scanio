@@ -27,7 +27,7 @@ import sys
 import os
 # import pyyed
 
-This portion will check for pyyed and prompt user to install it if not already
+#This portion will check for pyyed and prompt user to install it if not already
 try:
     import pyyed
 except:
@@ -270,7 +270,7 @@ def bannerGrab(addy, port):
 
 def robustScan(addy, port):
     try:
-        tcp_args = 'timeout 60 bash -c "nmap -T4 -A -sT -Pn ' + str(addy) + ' -p ' + str(port) + '"'
+        tcp_args = 'timeout 45 bash -c "nmap -T4 -A -sT -Pn ' + str(addy) + ' -p ' + str(port) + '"'
         tcp_res = sub.Popen(tcp_args, stdout = sub.PIPE, stderr = sub.PIPE, universal_newlines = True, shell = True)
         tcp_res.wait()
         out, err = tcp_res.communicate()
@@ -297,9 +297,14 @@ def callScanNC(addy, tp):
     # print(oi)
     addy = oi[0]
     robustTF = oi[1]
+    proxy = oi[2]
+    timeout = 1
+    if proxy == 'True':
+        timeout = 1.5
+    
     # print('Address: {0}   Robust: {1}'.format(addy, str(robustTF)))
     try:
-        tcp_args = ['timeout 1 /bin/bash -c "nc -nvzw1 '+str(addy)+' '+str(tp)+' 2>&1"']
+        tcp_args = ['timeout '+str(timeout)+' /bin/bash -c "nc -nvzw1 '+str(addy)+' '+str(tp)+' 2>&1"']
         tcp_res = sub.Popen(tcp_args, stdout = sub.PIPE, stderr = sub.PIPE, universal_newlines = True, shell = True)
         tcp_res.wait()
         result, err = tcp_res.communicate()
@@ -343,9 +348,14 @@ def callScanP(addy, tp):
     # print(oi)
     addy = oi[0]
     robustTF = oi[1]
+    proxy = oi[2]
+    timeout = 1
+    if proxy == 'True':
+        timeout = 1.5
+    
     # print('Address: {0}   Robust: {1}'.format(addy, str(robustTF)))
     try:
-        tcp_args = ['timeout 1 /bin/bash -c "exec echo > /dev/tcp/'+str(addy)+'/'+str(tp)+'";retval=$?;echo $retval']
+        tcp_args = ['timeout '+str(timeout)+' /bin/bash -c "exec echo > /dev/tcp/'+str(addy)+'/'+str(tp)+'";retval=$?;echo $retval']
         tcp_res = sub.Popen(tcp_args, stdout = sub.PIPE, stderr = sub.PIPE, universal_newlines = True, shell = True)
         tcp_res.wait()
         result, err = tcp_res.communicate()
@@ -1148,7 +1158,7 @@ if __name__ == '__main__':
         for i in final_range:
             addy = str(net) + "." + str(i)
             with Pool(initializer = init, initargs = (currcount, ), processes=procnum, maxtasksperchild=100) as pool:
-                results = pool.starmap_async(scanType, zip(repeat(str(addy)+':'+str(robust)), final_ports))
+                results = pool.starmap_async(scanType, zip(repeat(str(addy)+':'+str(robust)+':'+str(proxy)), final_ports))
                 results.wait()
 
             logVars = sortXML(addy)
@@ -1168,12 +1178,12 @@ if __name__ == '__main__':
                         clearZNote(addy)
                     newZnote(addy, printext)
 
-            if proxy:
-                if count == 7:
-                    count = 1
-                else:
-                    count += 1
-                time.sleep(count)
+            # if proxy:
+            #     if count == 7:
+            #         count = 1
+            #     else:
+            #         count += 1
+            #     time.sleep(count)
 
     except KeyboardInterrupt:
         print('\n\n\t\t!!! SCAN INTERRUPTED !!!\n')
