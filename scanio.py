@@ -1169,7 +1169,7 @@ if __name__ == '__main__':
                     newZnote(addy, printext)
 
             if proxy:
-                if count == 5:
+                if count == 7:
                     count = 1
                 else:
                     count += 1
