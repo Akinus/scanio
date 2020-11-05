@@ -35,7 +35,7 @@ except:
         while True:
             choice = input('Pyyed library not found but is needed. Install? \'Y\'es or \'N\'o?\n:')
             if choice.lower() == 'y':
-                subprocess.call('pip install pyyed',shell=True)
+                sub.call('pip install pyyed',shell=True)
                 import pyyed
                 break
             elif choice.lower() == 'n':
