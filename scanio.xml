@@ -1,0 +1,7 @@
+<scan>
+  <subnet>
+    <subnet-address>10.0.0</subnet-address>
+    <pivot>10.0.0.132</pivot>
+    <subnet-name />
+  </subnet>
+</scan>
