@@ -1101,6 +1101,57 @@ def initiate():
 
     return operation, net, final_range, final_ports, totalscans, printnet, clearlog, netmap, robust, cNote, zNote, fulladd, proxy
 
+def ulimit():
+    try:
+        tcp_args = ['ulimit -n']
+        tcp_res = sub.Popen(tcp_args, stdout = sub.PIPE, stderr = sub.PIPE, universal_newlines = True, shell = True)
+        tcp_res.wait()
+        softlimit, err = tcp_res.communicate()
+        tcp_res.kill()
+        # tcp_args = ['nc -nvzw1 '+str(addy)+' '+str(tp)+' 2>&1']
+        # result = check_output(['nc -nvzw1 '+str(addy)+' '+str(tp)+' 2>&1'], stderr=STDOUT, timeout=0.3)
+    except:
+        softlimit = 1024
+    
+    try:
+        tcp_args = ['ulimit -n -H']
+        tcp_res = sub.Popen(tcp_args, stdout = sub.PIPE, stderr = sub.PIPE, universal_newlines = True, shell = True)
+        tcp_res.wait()
+        hardlimit, err = tcp_res.communicate()
+        tcp_res.kill()
+        # tcp_args = ['nc -nvzw1 '+str(addy)+' '+str(tp)+' 2>&1']
+        # result = check_output(['nc -nvzw1 '+str(addy)+' '+str(tp)+' 2>&1'], stderr=STDOUT, timeout=0.3)
+    except:
+        hardlimit = 1024
+    
+    try:
+        tcp_args = ['ulimit -n '+hardlimit]
+        tcp_res = sub.Popen(tcp_args, stdout = sub.PIPE, stderr = sub.PIPE, universal_newlines = True, shell = True)
+        tcp_res.wait()
+        result2, err = tcp_res.communicate()
+        tcp_res.kill()
+        # tcp_args = ['nc -nvzw1 '+str(addy)+' '+str(tp)+' 2>&1']
+        # result = check_output(['nc -nvzw1 '+str(addy)+' '+str(tp)+' 2>&1'], stderr=STDOUT, timeout=0.3)
+    except:
+        result2 = 'Error'
+    
+    if result2 == 'Error':
+        return softlimit
+
+    try:
+        tcp_args = ['ulimit -n']
+        tcp_res = sub.Popen(tcp_args, stdout = sub.PIPE, stderr = sub.PIPE, universal_newlines = True, shell = True)
+        tcp_res.wait()
+        softlimit, err = tcp_res.communicate()
+        tcp_res.kill()
+        # tcp_args = ['nc -nvzw1 '+str(addy)+' '+str(tp)+' 2>&1']
+        # result = check_output(['nc -nvzw1 '+str(addy)+' '+str(tp)+' 2>&1'], stderr=STDOUT, timeout=0.3)
+    except:
+        softlimit = 1024
+    
+    return softlimit
+    
+
 def init(args):
     ''' store the counter for later use '''
     global currcount
@@ -1131,6 +1182,8 @@ if __name__ == '__main__':
     fulladd = scanInfo[10]
     proxy = scanInfo[11]
 
+    plimit = ulimit()
+    print('File Limit = {0}'.format(plimit))
     contVar = input('Continue? Y/N (default y): ')
     if contVar != 'Y' and contVar != 'Yes' and contVar != 'yes' and contVar != 'y' and contVar != '':
         sys.exit(2)
@@ -1153,11 +1206,11 @@ if __name__ == '__main__':
         elif len(final_ports) > 1024:
             procnum = 50
             
-    count = 1
+    count = 0
     try:
         for i in final_range:
             addy = str(net) + "." + str(i)
-            with Pool(initializer = init, initargs = (currcount, ), processes=procnum, maxtasksperchild=100) as pool:
+            with Pool(initializer = init, initargs = (currcount, ), processes=procnum, maxtasksperchild=1) as pool:
                 results = pool.starmap_async(scanType, zip(repeat(str(addy)+':'+str(robust)+':'+str(proxy)), final_ports))
                 results.wait()
 
