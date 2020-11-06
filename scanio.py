@@ -1210,7 +1210,7 @@ if __name__ == '__main__':
     try:
         for i in final_range:
             addy = str(net) + "." + str(i)
-            with Pool(initializer = init, initargs = (currcount, ), processes=200, maxtasksperchild=1) as pool:
+            with Pool(initializer = init, initargs = (currcount, ), processes=300, maxtasksperchild=1) as pool:
                 results = pool.starmap_async(scanType, zip(repeat(str(addy)+':'+str(robust)+':'+str(proxy)), final_ports))
                 results.wait()
 
