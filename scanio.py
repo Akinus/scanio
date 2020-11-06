@@ -270,7 +270,7 @@ def bannerGrab(addy, port):
 
 def robustScan(addy, port):
     try:
-        tcp_args = 'timeout 30 bash -c "nmap -T4 -A -sT -Pn ' + str(addy) + ' -p ' + str(port) + '"'
+        tcp_args = 'timeout 30 bash -c "nmap -T4 -A -Pn ' + str(addy) + ' -p ' + str(port) + '"'
         tcp_res = sub.Popen(tcp_args, stdout = sub.PIPE, stderr = sub.PIPE, universal_newlines = True, shell = True)
         tcp_res.wait()
         out, err = tcp_res.communicate()
@@ -304,7 +304,7 @@ def callScanNC(addy, tp):
     
     # print('Address: {0}   Robust: {1}'.format(addy, str(robustTF)))
     try:
-        tcp_args = ['timeout '+str(timeout)+' /bin/bash -c "nc -nvzw1 '+str(addy)+' '+str(tp)+' 2>&1"']
+        tcp_args = ['timeout '+str(timeout)+' /bin/bash -c "nc -nvz -w 1 '+str(addy)+' '+str(tp)+' 2>&1"']
         tcp_res = sub.Popen(tcp_args, stdout = sub.PIPE, stderr = sub.PIPE, universal_newlines = True, shell = True)
         tcp_res.wait()
         result, err = tcp_res.communicate()
