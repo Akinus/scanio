@@ -1195,7 +1195,7 @@ if __name__ == '__main__':
 
     Timer()
     update_progress()
-    procnum = plimit
+    procnum = int(plimit)
     # if fulladd == True:
     #     if len(final_ports) > 40000:
     #         procnum = 200
