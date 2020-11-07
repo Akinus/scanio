@@ -231,6 +231,11 @@ def addPort(addy, num, banner, robust):
                 bannertext = portnum.find('banner')
                 if bannertext.text != banner:
                     bannertext.text = banner
+
+                robusttext = portnum.find('robust')
+                if robusttext.text != robust:
+                    robusttext.text = robust
+
                 indent(root)
                 tree.write("scanio.xml")
         else:
@@ -249,6 +254,11 @@ def addPort(addy, num, banner, robust):
                 bannertext = portnum.find('banner')
                 if bannertext.text != banner:
                     bannertext.text = banner
+
+                robusttext = portnum.find('robust')
+                if robusttext.text != robust:
+                    robusttext.text = robust
+
                 indent(root)
                 tree.write("scanio.xml")
     return
@@ -314,7 +324,9 @@ def callScanNC(addy, tp):
     except:
         result = 'Encountered and error while scanning {0}'.format(addy)
         print(result, end='\r')
-        return result
+        with currcount.get_lock():
+            currcount.value += 1
+        return None
 
     if "open" in result or "succ" in result:
         if robustTF == 'True':
@@ -335,9 +347,18 @@ def callScanNC(addy, tp):
             addPort(addy, tp, banner, robust)
         else:
             addPort(addy, tp, banner, robust)
-    with currcount.get_lock():
-        currcount.value += 1
-    return result
+        
+        with currcount.get_lock():
+            currcount.value += 1
+        
+        printext = printall(addy)
+        sys.stdout.write('\r{0}'.format(printext))
+        sys.stdout.flush()
+        return tp
+    else:
+        with currcount.get_lock():
+            currcount.value += 1
+        return None
 
 #### start port scan on linux using /dev/tcp
 def callScanP(addy, tp):
@@ -1195,7 +1216,8 @@ if __name__ == '__main__':
 
     Timer()
     update_progress()
-    procnum = round(int(plimit) / 4)
+    procnum = round(int(plimit) / 8)
+
     # if fulladd == True:
     #     if len(final_ports) > 40000:
     #         procnum = 200
@@ -1210,9 +1232,16 @@ if __name__ == '__main__':
     try:
         for i in final_range:
             addy = str(net) + "." + str(i)
-            with Pool(initializer = init, initargs = (currcount, ), processes=300, maxtasksperchild=1) as pool:
+            with Pool(initializer = init, initargs = (currcount, ), processes=200, maxtasksperchild=1) as pool:
                 results = pool.starmap_async(scanType, zip(repeat(str(addy)+':'+str(robust)+':'+str(proxy)), final_ports))
                 results.wait()
+            
+            plist = []
+            for p in results.get():
+                if p != None:
+                    plist.append(p)
+            
+            print(plist)
 
             logVars = sortXML(addy)
             if logVars == 1:
