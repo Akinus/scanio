@@ -156,8 +156,13 @@ def parseRange(nputstr=""):
     return selection
 
 def get_ip_address(net):
+    if len(net.split('.')) > 3:
+        laddy = net.split('.')
+        naddy = '{0}.{1}.{2}'.format(laddy[0], laddy[1], laddy[2])
+    else:
+        naddy = net
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    s.connect((net + '.1', 30100))
+    s.connect((naddy + '.1', 30100))
     return s.getsockname()[0]
 
 def addSubnet(addy):
@@ -197,6 +202,15 @@ def addHost(addy):
         newpw.text = ''
         indent(root)
         tree.write("scanio.xml")
+
+        # introptext = '\r---------------'
+        # printret = '\r{0}'.format(' '*70)
+        # printret = printret + introptext
+        # if addy == get_ip_address(addy):
+        #     print('{0}\n{1} (current host)'.format(printret, addy))
+        # else:
+        #     print('{0}\n{1}'.format(printret, addy))
+    
     return
 
 def addPort(addy, num, banner, robust):
@@ -261,6 +275,16 @@ def addPort(addy, num, banner, robust):
 
                 indent(root)
                 tree.write("scanio.xml")
+    
+        # spacelen = 5 - len(str(num))
+        
+        # if robust:
+        #     print('\n|__ {0}'.format(robust))
+        # elif banner:
+        #     print('\n|__ {0} {1}-> {2}'.format(num, '-'*spacelen, banner[:50]))
+        # else:
+        #     print('\n|__ {0}'.format(num))
+    
     return
 
 def bannerGrab(addy, port):
@@ -347,14 +371,14 @@ def callScanNC(addy, tp):
             addPort(addy, tp, banner, robust)
         else:
             addPort(addy, tp, banner, robust)
-        
+                    
         with currcount.get_lock():
             currcount.value += 1
         
-        printext = printall(addy)
-        sys.stdout.write('\r{0}'.format(printext))
-        sys.stdout.flush()
-        return tp
+        # printext = printall(addy, tp)
+        # sys.stdout.write('\r{0}'.format(printext))
+        # sys.stdout.flush()
+        # return tp
     else:
         with currcount.get_lock():
             currcount.value += 1
@@ -589,7 +613,7 @@ def printall(addy):
                     if pflag == 0:
                         printtext = printtext + ' '*endlen
 
-                    printret = '{0}{1}'.format(printret, printtext)         
+                    printret = '\r{0}{1}'.format(printret, printtext)         
                     plist.remove(pp)
     else:
         naddy = addy
@@ -609,9 +633,9 @@ def printall(addy):
                 printret = '\r{0}'.format(' '*70)
                 printret = printret + introptext
                 if ip == get_ip_address(addy):
-                    print('{0} (current host)'.format(ip))
+                    printret = '{0}\n{1} (current host)'.format(printret, ip)
                 else:
-                    print(ip)
+                    printret = '{0}\n{1}'.format(printret, ip)
                 for p in root.findall('./subnet/[subnet-address = "'+naddy+'"]/host/[address = "'+ip+'"]/port/number'):
                     plist.append(int(p.text))
                 for pp in sorted(plist):
@@ -1236,19 +1260,20 @@ if __name__ == '__main__':
                 results = pool.starmap_async(scanType, zip(repeat(str(addy)+':'+str(robust)+':'+str(proxy)), final_ports))
                 results.wait()
             
-            plist = []
-            for p in results.get():
-                if p != None:
-                    plist.append(p)
+            # plist = []
+            # for p in results.get():
+            #     if p != None:
+            #         plist.append(p)
             
-            print(plist)
+            # print(plist)
 
             logVars = sortXML(addy)
             if logVars == 1:
                 pass
             else:
                 printext = printall(addy)
-                print(printext)
+                print('{0}\n'.format(printext))
+
                 if netmap:
                     netgraph()
                 if cnote:
