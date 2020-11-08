@@ -971,6 +971,7 @@ def initiate():
                                                 ***If this option is enabled, you cannot use -e or --end.***")
     uinput.add_argument("-p", "--ports", help = "The ports to be scanned. Should be comma-separated or can be a range ie: 1-30.\
                                                 Defaults to list from: https://rb.gy/x86g6c")
+    uinput.add_argument("-p-", "--allports", help = "Shortcut to scan all ports 1-65535", action="store_true")
     uinput.add_argument("-c", "--clearlog", help = "Clears the log and starts fresh.", action="store_true")
     uinput.add_argument("-f", "--fast", help = "Performs a fast scan using netcat vs the default /dev/tcp.  This option does have \
                                                 the potential to miss some ports.  REQUIRES NETCAT to be installed. \
@@ -995,6 +996,7 @@ def initiate():
     cNote = False
     zNote = False
     proxy = False
+    allports = False
 
     opts = uinput.parse_args()
 
@@ -1068,7 +1070,10 @@ def initiate():
         for p in range(ipstart,ipend+1):
             final_range.add(p)
 
-    if opts.ports:
+    if opts.allports:
+        uports = '1-65535'
+        pports = uports
+    elif opts.ports:
         uports = opts.ports
         pports = uports
     else:
@@ -1256,7 +1261,7 @@ if __name__ == '__main__':
     try:
         for i in final_range:
             addy = str(net) + "." + str(i)
-            with Pool(initializer = init, initargs = (currcount, ), processes=200, maxtasksperchild=1) as pool:
+            with Pool(initializer = init, initargs = (currcount, ), processes=200, maxtasksperchild=200) as pool:
                 results = pool.starmap_async(scanType, zip(repeat(str(addy)+':'+str(robust)+':'+str(proxy)), final_ports))
                 results.wait()
             
@@ -1292,29 +1297,23 @@ if __name__ == '__main__':
             #         count += 1
             #     time.sleep(count)
 
+        currcount.value = totalscans
+        update_progress()
+        time.sleep(0.3)
+        print('\n\n\t\t*** SCAN COMPLETE *** ')
+    
     except KeyboardInterrupt:
+        pool.terminate()
         print('\n\n\t\t!!! SCAN INTERRUPTED !!!\n')
         time.sleep(0.2)
+    
+    finally:
         logVars = sortXML(printnet)
         if logVars == 1:
-            print('\nNo Hosts Found...')
+            # print('\nNo Hosts Found...')
             sys.exit(2)
         else:
             # printall(printnet)
             if netmap:
                 netgraph()
-            sys.exit(2)
-
-    currcount.value = totalscans
-    update_progress()
-    time.sleep(0.3)
-    print('\n\n\t\t*** SCAN COMPLETE *** ')
-    logVars = sortXML(printnet)
-    if logVars == 1:
-        # print('\nNo Hosts Found...')
-        sys.exit(2)
-    else:
-        # printall(printnet)
-        if netmap:
-            netgraph()
     
