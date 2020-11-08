@@ -10,6 +10,9 @@
     "type": "git",
     "url": "git+https://github.com/Akinus/scanio.git"
   },
+  "publishConfig": { 
+    "registry": "https://npm.pkg.github.com/akinus" 
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
