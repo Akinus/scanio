@@ -54,3 +54,20 @@ optional arguments:
   -m, --map
   ---------------------
   Creates a network map to a .graphml file Download yEd to edit scanio.graphml from https://www.yworks.com/products/yed
+
+  -nC, --cnote 
+  ---------------------
+  Creates a new CherryTree note file with pre-determined template
+
+  -nZ, --znote, 
+  ---------------------
+  Creates a new Zim folder structure and templated notes
+    
+  -pc, --proxychains
+  ---------------------
+  Changes the network saturation to try and avoid the too many files open
+
+  -rb, --robust
+  ---------------------
+  Runs NMAP -A on found ports. WARNING: THIS WILL DRASTICALLY SLOW DOWN THE SCAN. ***REQUIRES NMAP TO BE INSTALLED***                                             
+
