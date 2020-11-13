@@ -693,7 +693,7 @@ class scanjobs(object):
                 self.addPort(addy, tp, banner, robust)
             
             if enum:
-                if search('http', banner):
+                if search('http', banner) or search('HTTP', banner):
                     domain = 'http://'
                     gobuster = self.gobusterScan(domain, addy, tp)
                     self.addGobuster(addy, gobuster)
@@ -752,7 +752,8 @@ class scanjobs(object):
             tcp_res.kill()
         except (Exception, KeyboardInterrupt, SystemExit):
             out = 'gobuster-Error.'
-            # raise Exception
+            print('GOBUSTER ERROR!!')
+            raise Exception
 
         if search('concurrent connection', out):
             out = ''
