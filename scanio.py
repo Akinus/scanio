@@ -695,8 +695,7 @@ class scanjobs(object):
             if enum:
                 if search('http', banner) or search('HTTP', banner):
                     domain = 'http://'
-                    gobuster = self.gobusterScan(domain, addy, tp)
-                    self.addGobuster(addy, gobuster)
+                    self.gobusterScan(domain, addy, tp)
 
             io.sortXML(io(), addy)
         q.put(1)
@@ -745,7 +744,8 @@ class scanjobs(object):
 
     def gobusterScan(self, domain, addy, port):
         try:
-            tcp_args = 'timeout 300 bash -c "gobuster dir -u '+domain+addy+':'+port+' -t 35 --wordlist=\"/usr/share/seclists/Discovery/Web-Content/directory-list-2.3-small.txt\""'
+            tcp_args = 'gobuster dir -u '+domain+addy+':'+port+' -t 35 --wordlist=\"/usr/share/seclists/Discovery/Web-Content/directory-list-2.3-small.txt\"'
+            print(tcp_args)
             tcp_res = sub.Popen(tcp_args, stdout = sub.PIPE, stderr = sub.PIPE, universal_newlines = True, shell = True)
             tcp_res.wait(300)
             out, err = tcp_res.communicate()
@@ -758,7 +758,8 @@ class scanjobs(object):
         if search('concurrent connection', out):
             out = ''
         
-        return out
+        self.addGobuster(addy, out)
+        return
     
     def addSubnet(self, addy):
         pivot = scanjobs.get_ip_address(scanjobs(), addy)
