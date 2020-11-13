@@ -145,6 +145,10 @@ class scanjobs(object):
         uinput.add_argument("-f", "--fast", help = "Performs a fast scan using netcat vs the default /dev/tcp.  This option does have \
                                                     the potential to miss some ports.  REQUIRES NETCAT to be installed. \
                                                     ", action="store_true")
+        uinput.add_argument("-en", "--enumerate", help = "Performs Nikto, Gobuster, http-vuln NMAP, smb-vuln NMAP, \
+                                                    WPScan, and Searchsploit scans on found pertinent services \
+                                                    REQUIRES THOSE PROGRAMS to be installed or these scans will fail. \
+                                                    ", action="store_true")                                            
         uinput.add_argument("--show", help = "Shows the currently logged results for the address.  When used with --map \
                                                 this will recreate the network map also", action="store_true")
         uinput.add_argument("-m", "--map", help = "Creates a network map to a .graphml file \
@@ -167,6 +171,7 @@ class scanjobs(object):
         timeout = 2
         prints = []
         allports = False
+        enum = False
 
         opts = uinput.parse_args()
 
@@ -308,6 +313,10 @@ class scanjobs(object):
             prints.append('|--> Will adjust traffic to avoid proxychains network saturation')
             timeout = 4
 
+        if opts.enumerate:
+            prints.append('|--> Will use all pertinent enumeration scans. WILL BE SLOW!!!')
+            enum = True
+
         plimit = self.ulimit()
         prints.append('File Limit = {0}'.format(plimit))
         for p in prints:
@@ -317,7 +326,7 @@ class scanjobs(object):
         if contVar != 'Y' and contVar != 'Yes' and contVar != 'yes' and contVar != 'y' and contVar != '':
             sys.exit(2)
 
-        return operation, net, final_range, final_ports, totalscans, printnet, clearlog, netmap, robust, cNote, zNote, fulladd, timeout, hosts
+        return operation, net, final_range, final_ports, totalscans, printnet, clearlog, netmap, robust, cNote, zNote, fulladd, timeout, hosts, enum
     
      #http://thoughtsbyclayg.blogspot.com/2008/10/parsing-list-of-numbers-in-python.html
     def parseRange(self, nputstr=""):
@@ -402,6 +411,7 @@ class scanjobs(object):
         fulladd = scanInfo[11]
         timeout = scanInfo[12]
         hosts = scanInfo[13]
+        enum = scanInfo[14]
 
         if clearlog:
             write.clearLog()
@@ -453,7 +463,7 @@ class scanjobs(object):
         if scanType == 'callScanNC':
             func = functools.partial(self.callScanNC, timeout, currcount, q, robust)
         else:
-            func = functools.partial(self.callScanP, timeout, currcount, q, robust)
+            func = functools.partial(self.callScanP, timeout, currcount, q, robust, enum)
 
         ##BEGIN SCAN THREADS
         addys = self.totalcount(hosts, ports)[1]
@@ -643,7 +653,7 @@ class scanjobs(object):
         #     currcount.value += 1
         return retval
 
-    def callScanP(self, timeout, currcount, q, robust, addys):
+    def callScanP(self, timeout, currcount, q, robust, enum, addys):
         addy = addys[0]
         tp = addys[1]
         retval = None
@@ -682,6 +692,12 @@ class scanjobs(object):
             else:
                 self.addPort(addy, tp, banner, robust)
             
+            if enum:
+                if search('http', banner):
+                    httpaddy = 'http://'+str(addy)+':'
+                    gobuster = self.gobusterScan(httpaddy, tp)
+                    self.addGobuster(addy, gobuster)
+
             io.sortXML(io(), addy)
         q.put(1)
         # with counter_lock:
@@ -726,6 +742,22 @@ class scanjobs(object):
         else:
             out = ''
         return out
+
+    def gobusterScan(self, addy, port):
+        try:
+            tcp_args = 'timeout 300 bash -c "gobuster dir -u '+addy+':'+port+' -t 35 --wordlist="/usr/share/seclists/Discovery/Web-Content/directory-list-2.3-small.txt"'
+            tcp_res = sub.Popen(tcp_args, stdout = sub.PIPE, stderr = sub.PIPE, universal_newlines = True, shell = True)
+            tcp_res.wait(300)
+            out, err = tcp_res.communicate()
+            tcp_res.kill()
+        except (Exception, KeyboardInterrupt, SystemExit):
+            out = 'NMAP-Error.'
+            # raise Exception
+
+        if search('concurrent connection', out):
+            out = ''
+        
+        return out
     
     def addSubnet(self, addy):
         pivot = scanjobs.get_ip_address(scanjobs(), addy)
@@ -764,7 +796,25 @@ class scanjobs(object):
             display.indent(display(), root)
             tree.write(self.file)
         return
-
+    
+    def addGobuster(self, addy, gobuster):
+        show = display()
+        with lock:
+            sl = addy.split('.')
+            subnetstr = './subnet/[subnet-address = "{0}.{1}.{2}"]'.format(sl[0], sl[1], sl[2])
+            # pivotstr = './subnet/[subnet-address = "{0}.{1}.{2}"]/pivot'.format(sl[0], sl[1], sl[2])
+            tree = ET.parse(self.file)
+            root = tree.getroot()
+            subnet = root.find(subnetstr)
+            # pivot = root.find(pivotstr).text
+            # if addy != pivot:
+            host = subnet.find('./host/[address = "'+addy+'"]')
+            newgo = ET.SubElement(host, 'gobuster')
+            newgo.text = gobuster
+            show.indent(root)
+            tree.write(self.file)
+        return
+    
     def addPort(self, addy, num, banner, robust):
         with lock:
             addyStr = './subnet/host/[address = "'+str(addy)+'"]'
