@@ -123,6 +123,7 @@ class scanjobs(object):
         return softlimit
 
     def initiate(self):
+        show = display()
         if os.path.exists(self.file) == False:
             io.clearLog(io())
         #Get Options
@@ -177,7 +178,7 @@ class scanjobs(object):
 
         net = opts.address
         if opts.show:
-            printext = display.printall(display(), net)
+            printext = show.printall(net)[0]
             print(printext)
             if opts.map:
                 io.netgraph(io())
@@ -412,6 +413,9 @@ class scanjobs(object):
         timeout = scanInfo[12]
         hosts = scanInfo[13]
         enum = scanInfo[14]
+        
+        # print(show.printall(net)[3])
+        # sys.exit()
 
         if clearlog:
             write.clearLog()
@@ -457,11 +461,11 @@ class scanjobs(object):
         res = io()
         manager = Manager()
         q = manager.Queue()
-        p = Process(target= res.process_results, args=(q, currcount, totalcount, progtext, net))
+        p = Process(target= res.process_results, args=(q, currcount, totalcount, progtext, net, znote))
         p.start()
         
         if scanType == 'callScanNC':
-            func = functools.partial(self.callScanNC, timeout, currcount, q, robust)
+            func = functools.partial(self.callScanNC, timeout, currcount, q, robust, enum)
         else:
             func = functools.partial(self.callScanP, timeout, currcount, q, robust, enum)
 
@@ -508,13 +512,15 @@ class scanjobs(object):
                 smallProgress = "{:.1f}".format(progress*100)
                 # printext = self.printall(net)
                 update = "Percent: [{0}] {1}% {2} {3}/{4}. {5}m {6}s spent. ~{7} ports/s    ".format( "#"*block + "-"*(barLength-block), smallProgress, status, currcount.value, totalscans, mon, sec, pps)
-                progtext.value = show.printall(net)
+                progtext.value = show.printall(net)[0]
                 length = len(str(progtext.value).splitlines()) + 10
                 window.pad.resize(length, window.width)
                 window.pad.addstr(1, 1, update)
                 window.pad.addstr(2, 1, progtext.value)
                 window.pad.refresh(mypad_pos, 0, 1, 1, window.height, window.width)
-
+                
+                
+                ## CATCH KEYS
                 ch = window.screen.getch()
                 if ch == curses.KEY_DOWN:
                     mypad_pos += 1
@@ -530,28 +536,14 @@ class scanjobs(object):
                 
                 time.sleep(0.01)
             found = results.get()
-            ##### WRITE REQUESTED FILES
             found = list(dict.fromkeys(found))
-            for i in found:
-                if i != None:
-                    addy = i
-                    if netmap:
-                        write.netgraph()
-                    if cnote and not os.path.exists(addy + '.ctd'):
-                        if clearlog:
-                            write.clearCNote(addy)
-                        write.newCnote(addy, show.printall(addy))
-                    if znote:
-                        if clearlog:
-                            write.clearZNote(addy)
-                        write.newZnote(addy, show.printall(addy))
             time.sleep(2)
             window.pad.clear()
             progress = 1
             smallProgress = "{:.1f}".format(progress*100)
             update = "Percent: [{0}] {1}% {2} {3}/{4}. {5}m {6}s spent. ~{7} ports/s\n{8}\n{9} \
 ".format( "#"*block + "-"*(barLength-block), smallProgress, status, currcount.value, totalscans, mon, sec, pps, '***SCAN COMPLETE!***', 'Press q to exit this window...')
-            progtext.value = show.printall(net)
+            progtext.value = show.printall(net)[0]
             length = len(str(progtext.value).splitlines()) + 10
             window.pad.resize(length, window.width)
             window.pad.addstr(1, 1, update)
@@ -561,7 +553,7 @@ class scanjobs(object):
             while True:
                 update = "Percent: [{0}] {1}% {2} {3}/{4}. {5}m {6}s spent. ~{7} ports/s\n{8}\n{9} \
 ".format( "#"*block + "-"*(barLength-block), smallProgress, status, currcount.value, totalscans, mon, sec, pps, '***SCAN COMPLETE!***', 'Press q to exit this window...')
-                progtext.value = show.printall(net)
+                progtext.value = show.printall(net)[0]
                 ch = window.screen.getch()
                 if ch == curses.KEY_DOWN:
                     mypad_pos += 1
@@ -598,12 +590,13 @@ class scanjobs(object):
 
         finally:
             print('\n\n########################### RESULTS #######################')
-            results = show.printall(net)
+
+            results = show.printall(net)[0]
             print(results)
             print('\n############################ END ##########################\n')
             sys.tracebacklimit=0
             
-    def callScanNC(self, timeout, currcount, q, robust, addys):
+    def callScanNC(self, timeout, currcount, q, robust, enum, addys):
         addy = addys[0]
         tp = addys[1]
         retval = None
@@ -704,7 +697,7 @@ class scanjobs(object):
                     self.addGobuster(addy, tp, gobuster)
 
             io.sortXML(io(), addy)
-        q.put(1)
+        q.put(addy)
         # with counter_lock:
         # currcount.value += 1
         # print(result)
@@ -750,9 +743,9 @@ class scanjobs(object):
 
     def gobusterScan(self, domain, addy, port):
         try:
-            tcp_args = 'timeout 300 bash -c "gobuster dir -u '+str(domain)+str(addy)+':'+str(port)+' -t 35 --wordlist=\'/usr/share/seclists/Discovery/Web-Content/directory-list-2.3-small.txt\'"'
+            tcp_args = 'timeout 180 bash -c "gobuster dir -u '+str(domain)+str(addy)+':'+str(port)+' -t 35 --wordlist=\'/usr/share/seclists/Discovery/Web-Content/directory-list-2.3-small.txt\'"'
             tcp_res = sub.Popen(tcp_args, stdout = sub.PIPE, stderr = sub.PIPE, universal_newlines = True, shell = True)
-            tcp_res.wait(301)
+            tcp_res.wait(181)
             out, err = tcp_res.communicate()
             tcp_res.kill()
         except (Exception, KeyboardInterrupt, SystemExit):
@@ -891,14 +884,20 @@ class io(object):
 
     def __init__(self, file = 'scanio.xml'):
         self.file = file
+        self.rootfile = file
+        show = display()
         pass
 
-    def process_results(self, queue, currcount, totalcount, progtext, net):
+    def process_results(self, queue, currcount, totalcount, progtext, net, znote):
+        write = io()
         q = queue
+
         while currcount.value < totalcount:
             variable = q.get(True)
+            if znote:
+                write.newZnote(variable)
             with counter_lock:
-                currcount.value += variable
+                currcount.value += 1
 
     def clearZNote(self, addy):
         if os.name == 'nt':
@@ -1044,38 +1043,44 @@ class io(object):
             retvalue = 1   
         return retvalue
     
-    def newZnote(self, addy, data):
-        old_data = ''
-        cherry = addy + '.ctd'
-        if os.path.exists(cherry):
-            cherrylink = '[[.\\{0}|{1}]]'.format(cherry, cherry)
-        else:
-            cherrylink = ' '
-        paths = []
-        if os.name == 'nt':
-            sep = '\\'
-        else:
-            sep = '/'
-        
-        opath = os.getcwd()
-        addypath = opath + sep + addy
-        addyfile = addy + '.txt'
-        ipheader = 'Content-Type: text/x-zim-wiki\nWiki-Format: zim 0.4\nCreation-Date: 2020-10-28T20:13:55-07:00\n\
-====== ' + addy + ' ======\nCreated Wednesday 28 October 2020\n'
-        with open(addyfile, 'w') as fp:
-            fp.write(ipheader)
-            fp.write(cherrylink)
-            fp.close()
+    def newZnote(self, net):
+        show = display()
+        data = ''
+        godata = ''
+        for h in show.printall(net)[3]:
+            addy = h
+            data = show.printall(h)[1]
+            naddy = '{0}.{1}.{2}'.format(addy.split('.')[0], addy.split('.')[1], addy.split('.')[2])
+            cherry = addy + '.ctd'
+            if os.path.exists(cherry):
+                cherrylink = '[[.\\{0}|{1}]]'.format(cherry, cherry)
+            else:
+                cherrylink = ' '
+            paths = []
+            if os.name == 'nt':
+                sep = '\\'
+            else:
+                sep = '/'
+            
+            opath = os.getcwd()
+            addypath = opath + sep + addy
+            addyfile = addy + '.txt'
+            ipheader = 'Content-Type: text/x-zim-wiki\nWiki-Format: zim 0.4\nCreation-Date: 2020-10-28T20:13:55-07:00\n\
+    ====== ' + addy + ' ======\nCreated Wednesday 28 October 2020\n'
+            with open(addyfile, 'w') as fp:
+                fp.write(ipheader)
+                fp.write(cherrylink)
+                fp.close()
 
-        try:
-            if os.path.exists(addypath) == False:
-                os.mkdir(addypath)
-        except OSError:
-            print ("Creation of the directory %s failed" % addypath)
-        # else:
-            # print ("Successfully created the directory %s " % addypath)
+            try:
+                if os.path.exists(addypath) == False:
+                    os.mkdir(addypath)
+            except OSError:
+                print ("Creation of the directory %s failed" % addypath)
+            # else:
+                # print ("Successfully created the directory %s " % addypath)
 
-        text='Content-Type: text/x-zim-wiki\nWiki-Format: zim 0.4\nCreation-Date: 2020-11-01T13:29:00-08:00\n\
+            text='Content-Type: text/x-zim-wiki\nWiki-Format: zim 0.4\nCreation-Date: 2020-11-01T13:29:00-08:00\n\
 ====== Methodology ======\nCreated Sunday 01 November 2020\n\n\
 ==== Network Enumeration: ====\n\
 1. [[+Network_Enumeration:TCP|TCP]]\n\
@@ -1106,40 +1111,44 @@ class io(object):
 2. [[+Proof:Credentials|Credentials]]\n\
 3. [[+Proof:Screenshots|Screenshots]]\n\
 4. [[+Proof:Proof-of-root Screenshots|Proof-of-root Screenshots]]'
-        filepath = addypath + sep + 'Methodology.txt'
-        open(filepath, 'w').write(text)
+            filepath = addypath + sep + 'Methodology.txt'
+            open(filepath, 'w').write(text)
 
-        enumpath = addypath + sep + 'Methodology' + sep + 'Network_Enumeration'
-        paths.append(enumpath)
+            enumpath = addypath + sep + 'Methodology' + sep + 'Network_Enumeration'
+            paths.append(enumpath)
 
-        for path in paths:
+            for path in paths:
+                try:
+                    if os.path.exists(path) == False:
+                        os.makedirs(path)
+                except OSError:
+                    print ("Creation of the directory %s failed" % path)
+                # else:
+                    # print ("Successfully created the directory %s " % path)
+
+            datapath = enumpath + sep + 'TCP.txt'
+            open(datapath, 'w').write(data)
+
+            ####### GOBUSTER ADD TEXT
+            gopath = enumpath + sep + 'Gobuster.txt'
+            gobusters = None
             try:
-                if os.path.exists(path) == False:
-                    os.makedirs(path)
-            except OSError:
-                print ("Creation of the directory %s failed" % path)
-            # else:
-                # print ("Successfully created the directory %s " % path)
+                tree = ET.parse(self.rootfile)
+                root = tree.getroot()
+                gobusters = root.findall('./subnet/[subnet-address = "'+naddy+'"]/host/[address = "'+addy+'"]/gobuster')
+            except:
+                pass
+            if gobusters:
+                for g in gobusters:
+                    if g.text:
+                        godata = '{0}\n{1}'.format(godata, g.text)
+                    else:
+                        pass
 
-        datapath = enumpath + sep + 'TCP.txt'
-        if os.path.exists(datapath):
-            old_data = open(datapath, 'r').read()
-            os.remove(datapath)
-            new_data = '{0}\n{1}'.format(old_data, data)
-        else:
-            new_data = data
-        open(datapath, 'w').write(new_data)
+                open(gopath, 'w').write(godata)
 
-        # gopath = enumpath + sep + 'Gobuster.txt'
-        ######## LOOP  THROUGH AND GET ALL GOBUSTER DATA
-        #
-        # if os.path.exists(gopath):
-        #     old_godata = open(gopath, 'r').read()
-        #     os.remove(gopath)
-        #     new_godata = '{0}\n{1}'.format(old_godata, godata)
-        # else:
-        #     new_godata = godata
-        # open(gopath, 'w').write(new_godata)
+            ######
+
         return
 
     def newCnote(self, addy, data):
@@ -1393,7 +1402,11 @@ class display(object):
     
     def printall(self, addy):
         try:
+            enumtext = ''
             printret = ''
+            all_results = ''
+            hlist = list()
+            plist = list()
             if len(addy.split('.')) > 3:
                 laddy = addy.split('.')
                 naddy = '{0}.{1}.{2}'.format(laddy[0], laddy[1], laddy[2])
@@ -1405,7 +1418,6 @@ class display(object):
                 subnet = root.find(subnetstr)
                 subnethosts = subnet.findall('host')
                 if subnethosts:
-                    plist = list()
                     introptext = '\n---------------'
 
                     if ip == scanjobs.get_ip_address(scanjobs(), naddy):
@@ -1419,6 +1431,7 @@ class display(object):
                     if plist:
                         # printret = '{0}'.format(' '*70)
                         printret = printret + introptext
+                        hlist.append(ip)
 
                         for pp in sorted(plist):
                             spacelen = 5 - len(str(pp))
@@ -1426,65 +1439,6 @@ class display(object):
                             # print('tsize = {0}'.format(int(tsize)))
                             endlen = int(self.tsize) - len(printtext)
                             pflag = 0
-                            enumtext = ''
-                            try:
-                                for b in root.findall('./subnet/[subnet-address = "'+naddy+'"]/host/[address = "'+ip+'"]/port/[number = "'+str(pp)+'"]/banner'):
-                                    if b.text:
-                                        banner = b.text
-                                        printtext = '\n|__ {0} {1}-> {2}'.format(pp, '-'*spacelen, banner[:50])
-                                        pflag = 1
-                                
-                                for r in root.findall('./subnet/[subnet-address = "'+naddy+'"]/host/[address = "'+ip+'"]/port/[number = "'+str(pp)+'"]/robust'):
-                                    if r.text:
-                                        rb = r.text.splitlines()
-                                        rb = '\n     '.join(rb)
-                                        printtext = '\n|__ {0}'.format(rb)
-                                        pflag = 1
-
-                                for g in root.findall('./subnet/[subnet-address = "'+naddy+'"]/host/[address = "'+ip+'"]/gobuster'):
-                                    if g.text:
-                                        enumtext = '{0}\n ========> GOBUSTER FOR {1}:{2}:\n{3}'.format(enumtext, naddy, pp, g.text)
-                                    else:
-                                        enumtext = ''
-                            except:
-                                pass
-                                
-                            if pflag == 0:
-                                printtext = printtext
-                            
-
-                            printret = '{0}{1}{2}'.format(printret, printtext, enumtext)         
-                            plist.remove(pp)
-            else:
-                naddy = addy
-                tree = ET.parse(self.rootfile)
-                root = tree.getroot()
-                subnetstr = './subnet/[subnet-address = "'+naddy+'"]'
-                subnet = root.find(subnetstr)
-                subnethosts = subnet.findall('host')
-                if subnethosts:
-                    hlist = list()
-                    plist = list()
-                    for h in root.findall('./subnet/[subnet-address = "'+naddy+'"]/host/address'):
-                        hlist.append(h.text)
-                    ip_list = [ip.strip() for ip in hlist]
-                    for ip in sorted(ip_list, key = lambda ip: ( int(ip.split(".")[0]), int(ip.split(".")[1]), int(ip.split(".")[2]), int(ip.split(".")[3]))):
-                        introptext = '\n---------------'
-                        # printret = '{0}'.format(' '*70)
-                        printret = printret + introptext
-                        if ip == scanjobs.get_ip_address(scanjobs(), addy):
-                            printret = '{0}\n{1} (current host)'.format(printret,ip)
-                        else:
-                            printret = '{0}\n{1}'.format(printret,ip)
-                        for p in root.findall('./subnet/[subnet-address = "'+naddy+'"]/host/[address = "'+ip+'"]/port/number'):
-                            plist.append(int(p.text))
-                        for pp in sorted(plist):
-                            spacelen = 5 - len(str(pp))
-                            printtext = '\n|__ {0}'.format(pp)
-                            # print('tsize = {0}'.format(int(tsize)))
-                            endlen = int(self.tsize) - len(printtext)
-                            pflag = 0
-                            enumtext = ''
                             try:
                                 for b in root.findall('./subnet/[subnet-address = "'+naddy+'"]/host/[address = "'+ip+'"]/port/[number = "'+str(pp)+'"]/banner'):
                                     if b.text:
@@ -1507,15 +1461,74 @@ class display(object):
 
                             printret = '{0}{1}'.format(printret, printtext)         
                             plist.remove(pp)
+                        
                         for g in root.findall('./subnet/[subnet-address = "'+naddy+'"]/host/[address = "'+ip+'"]/gobuster'):
                             if g.text:
                                 enumtext = '{0}\n{1}'.format(enumtext, g.text)
                             else:
                                 enumtext = ''
-                        printret = '{0}{1}'.format(printret, enumtext) 
+                        # printret = '{0}{1}'.format(printret, enumtext)
+            else:
+                naddy = addy
+                tree = ET.parse(self.rootfile)
+                root = tree.getroot()
+                subnetstr = './subnet/[subnet-address = "'+naddy+'"]'
+                subnet = root.find(subnetstr)
+                subnethosts = subnet.findall('host')
+                if subnethosts:
+                    for h in root.findall('./subnet/[subnet-address = "'+naddy+'"]/host/address'):
+                        hlist.append(h.text)
+                    ip_list = [ip.strip() for ip in hlist]
+                    for ip in sorted(ip_list, key = lambda ip: ( int(ip.split(".")[0]), int(ip.split(".")[1]), int(ip.split(".")[2]), int(ip.split(".")[3]))):
+                        introptext = '\n---------------'
+                        # printret = '{0}'.format(' '*70)
+                        printret = printret + introptext
+                        if ip == scanjobs.get_ip_address(scanjobs(), addy):
+                            printret = '{0}\n{1} (current host)'.format(printret,ip)
+                        else:
+                            printret = '{0}\n{1}'.format(printret,ip)
+                        for p in root.findall('./subnet/[subnet-address = "'+naddy+'"]/host/[address = "'+ip+'"]/port/number'):
+                            plist.append(int(p.text))
+                        for pp in sorted(plist):
+                            spacelen = 5 - len(str(pp))
+                            printtext = '\n|__ {0}'.format(pp)
+                            # print('tsize = {0}'.format(int(tsize)))
+                            endlen = int(self.tsize) - len(printtext)
+                            pflag = 0
+                            try:
+                                for b in root.findall('./subnet/[subnet-address = "'+naddy+'"]/host/[address = "'+ip+'"]/port/[number = "'+str(pp)+'"]/banner'):
+                                    if b.text:
+                                        banner = b.text
+                                        printtext = '\n|__ {0} {1}-> {2}'.format(pp, '-'*spacelen, banner[:50])
+                                        pflag = 1
+                                
+                                for r in root.findall('./subnet/[subnet-address = "'+naddy+'"]/host/[address = "'+ip+'"]/port/[number = "'+str(pp)+'"]/robust'):
+                                    if r.text:
+                                        rb = r.text.splitlines()
+                                        rb = '\n     '.join(rb)
+                                        printtext = '\n|__ {0}'.format(rb)
+                                        pflag = 1
+
+                            except:
+                                pass
+
+                            if pflag == 0:
+                                printtext = printtext
+
+                            printret = '{0}{1}'.format(printret, printtext)         
+                            plist.remove(pp)
+                        
+                        for g in root.findall('./subnet/[subnet-address = "'+naddy+'"]/host/[address = "'+ip+'"]/gobuster'):
+                            if g.text:
+                                enumtext = '{0}\n{1}'.format(enumtext, g.text)
+                            else:
+                                enumtext = ''
+                        # printret = '{0}{1}'.format(printret, enumtext) 
+            all_results = '{0}{1}'.format(printret, enumtext) 
         except:
-            pass    
-        return printret
+            pass
+           
+        return all_results, printret, enumtext, hlist
 
 
 
