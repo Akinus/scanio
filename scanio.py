@@ -314,7 +314,7 @@ class scanjobs(object):
             timeout = 4
 
         if opts.enumerate:
-            prints.append('|--> Will use all pertinent enumeration scans. WILL BE SLOW!!!')
+            prints.append('|--> Will use all pertinent enumeration scans. ***WARNING*** Go grab some lunch, this will probably take a while.')
             enum = True
 
         plimit = self.ulimit()
@@ -645,6 +645,13 @@ class scanjobs(object):
             else:
                 self.addPort(addy, tp, banner, robust)
             
+            if enum:
+                if 'http' in banner or 'HTTP' in banner:
+                    domain = 'http://'
+                    # print(str(domain)+str(addy)+':'+str(tp))
+                    gobuster = self.gobusterScan(domain, addy, tp)
+                    self.addGobuster(addy, tp, gobuster)
+
             io.sortXML(io(), addy)
             
             # print(result)
@@ -694,7 +701,7 @@ class scanjobs(object):
                     domain = 'http://'
                     # print(str(domain)+str(addy)+':'+str(tp))
                     gobuster = self.gobusterScan(domain, addy, tp)
-                    self.addGobuster(addy, gobuster)
+                    self.addGobuster(addy, tp, gobuster)
 
             io.sortXML(io(), addy)
         q.put(1)
@@ -796,8 +803,10 @@ class scanjobs(object):
             tree.write(self.file)
         return
     
-    def addGobuster(self, addy, gobuster):
+    def addGobuster(self, addy, port, gobuster):
         show = display()
+        gobuster = gobuster.splitlines()
+        gobuster = '\n'.join(gobuster[13:])
         with lock:
             sl = addy.split('.')
             subnetstr = './subnet/[subnet-address = "{0}.{1}.{2}"]'.format(sl[0], sl[1], sl[2])
@@ -809,7 +818,7 @@ class scanjobs(object):
             # if addy != pivot:
             host = subnet.find('./host/[address = "'+addy+'"]')
             newgo = ET.SubElement(host, 'gobuster')
-            newgo.text = gobuster
+            newgo.text = '\n====================> Gobuster for {0}:{1}\n{2}'.format(addy, port, gobuster)
             show.indent(root)
             tree.write(self.file)
         return
@@ -1120,6 +1129,17 @@ class io(object):
         else:
             new_data = data
         open(datapath, 'w').write(new_data)
+
+        # gopath = enumpath + sep + 'Gobuster.txt'
+        ######## LOOP  THROUGH AND GET ALL GOBUSTER DATA
+        #
+        # if os.path.exists(gopath):
+        #     old_godata = open(gopath, 'r').read()
+        #     os.remove(gopath)
+        #     new_godata = '{0}\n{1}'.format(old_godata, godata)
+        # else:
+        #     new_godata = godata
+        # open(gopath, 'w').write(new_godata)
         return
 
     def newCnote(self, addy, data):
@@ -1479,19 +1499,20 @@ class display(object):
                                         printtext = '\n|__ {0}'.format(rb)
                                         pflag = 1
 
-                                for g in root.findall('./subnet/[subnet-address = "'+naddy+'"]/host/[address = "'+ip+'"]/gobuster'):
-                                    if g.text:
-                                        enumtext = '{0}\n ========> GOBUSTER FOR {1}:{2}:\n{3}'.format(enumtext, naddy, pp, g.text)
-                                    else:
-                                        enumtext = ''
                             except:
                                 pass
 
                             if pflag == 0:
                                 printtext = printtext
 
-                            printret = '{0}{1}{2}'.format(printret, printtext, enumtext)         
+                            printret = '{0}{1}'.format(printret, printtext)         
                             plist.remove(pp)
+                        for g in root.findall('./subnet/[subnet-address = "'+naddy+'"]/host/[address = "'+ip+'"]/gobuster'):
+                            if g.text:
+                                enumtext = '{0}\n{1}'.format(enumtext, g.text)
+                            else:
+                                enumtext = ''
+                        printret = '{0}{1}'.format(printret, enumtext) 
         except:
             pass    
         return printret
