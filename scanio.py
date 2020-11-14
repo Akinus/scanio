@@ -690,7 +690,7 @@ class scanjobs(object):
                 self.addPort(addy, tp, banner, robust)
             
             if enum:
-                if banner.find('http'):
+                if 'http' in banner or 'HTTP' in banner:
                     domain = 'http://'
                     # print(str(domain)+str(addy)+':'+str(tp))
                     gobuster = self.gobusterScan(domain, addy, tp)
@@ -1372,8 +1372,8 @@ class display(object):
                 elem.tail = i
     
     def printall(self, addy):
-        printret = ''
         try:
+            printret = ''
             if len(addy.split('.')) > 3:
                 laddy = addy.split('.')
                 naddy = '{0}.{1}.{2}'.format(laddy[0], laddy[1], laddy[2])
@@ -1406,32 +1406,34 @@ class display(object):
                             # print('tsize = {0}'.format(int(tsize)))
                             endlen = int(self.tsize) - len(printtext)
                             pflag = 0
-                            
-                            for b in root.findall('./subnet/[subnet-address = "'+naddy+'"]/host/[address = "'+ip+'"]/port/[number = "'+str(pp)+'"]/banner'):
-                                if b.text:
-                                    banner = b.text
-                                    printtext = '\n|__ {0} {1}-> {2}'.format(pp, '-'*spacelen, banner[:50])
-                                    pflag = 1
-                            
-                            for r in root.findall('./subnet/[subnet-address = "'+naddy+'"]/host/[address = "'+ip+'"]/port/[number = "'+str(pp)+'"]/robust'):
-                                if r.text:
-                                    rb = r.text.splitlines()
-                                    rb = '\n     '.join(rb)
-                                    printtext = '\n|__ {0}'.format(rb)
-                                    pflag = 1
+                            enumtext = ''
+                            try:
+                                for b in root.findall('./subnet/[subnet-address = "'+naddy+'"]/host/[address = "'+ip+'"]/port/[number = "'+str(pp)+'"]/banner'):
+                                    if b.text:
+                                        banner = b.text
+                                        printtext = '\n|__ {0} {1}-> {2}'.format(pp, '-'*spacelen, banner[:50])
+                                        pflag = 1
+                                
+                                for r in root.findall('./subnet/[subnet-address = "'+naddy+'"]/host/[address = "'+ip+'"]/port/[number = "'+str(pp)+'"]/robust'):
+                                    if r.text:
+                                        rb = r.text.splitlines()
+                                        rb = '\n     '.join(rb)
+                                        printtext = '\n|__ {0}'.format(rb)
+                                        pflag = 1
 
-                            for g in root.findall('./subnet/[subnet-address = "'+naddy+'"]/host/[address = "'+ip+'"]/gobuster'):
-                                if g.text:
-                                    gb = g.text.splitlines()
-                                    gb = '\n     '.join(gb)
-                                    enumtext = '\n ========> GOBUSTER:\n{0}'.format(gb)
-                                else:
-                                    enumtext = ''
-
+                                for g in root.findall('./subnet/[subnet-address = "'+naddy+'"]/host/[address = "'+ip+'"]/gobuster'):
+                                    if g.text:
+                                        enumtext = '{0}\n ========> GOBUSTER FOR {1}:{2}:\n{3}'.format(enumtext, naddy, pp, g.text)
+                                    else:
+                                        enumtext = ''
+                            except:
+                                pass
+                                
                             if pflag == 0:
                                 printtext = printtext
+                            
 
-                            printret = '{0}{1}'.format(printret, printtext, enumtext)         
+                            printret = '{0}{1}{2}'.format(printret, printtext, enumtext)         
                             plist.remove(pp)
             else:
                 naddy = addy
@@ -1462,35 +1464,36 @@ class display(object):
                             # print('tsize = {0}'.format(int(tsize)))
                             endlen = int(self.tsize) - len(printtext)
                             pflag = 0
-                            
-                            for b in root.findall('./subnet/[subnet-address = "'+naddy+'"]/host/[address = "'+ip+'"]/port/[number = "'+str(pp)+'"]/banner'):
-                                if b.text:
-                                    banner = b.text
-                                    printtext = '\n|__ {0} {1}-> {2}'.format(pp, '-'*spacelen, banner[:50])
-                                    pflag = 1
-                            
-                            for r in root.findall('./subnet/[subnet-address = "'+naddy+'"]/host/[address = "'+ip+'"]/port/[number = "'+str(pp)+'"]/robust'):
-                                if r.text:
-                                    rb = r.text.splitlines()
-                                    rb = '\n     '.join(rb)
-                                    printtext = '\n|__ {0}'.format(rb)
-                                    pflag = 1
+                            enumtext = ''
+                            try:
+                                for b in root.findall('./subnet/[subnet-address = "'+naddy+'"]/host/[address = "'+ip+'"]/port/[number = "'+str(pp)+'"]/banner'):
+                                    if b.text:
+                                        banner = b.text
+                                        printtext = '\n|__ {0} {1}-> {2}'.format(pp, '-'*spacelen, banner[:50])
+                                        pflag = 1
+                                
+                                for r in root.findall('./subnet/[subnet-address = "'+naddy+'"]/host/[address = "'+ip+'"]/port/[number = "'+str(pp)+'"]/robust'):
+                                    if r.text:
+                                        rb = r.text.splitlines()
+                                        rb = '\n     '.join(rb)
+                                        printtext = '\n|__ {0}'.format(rb)
+                                        pflag = 1
 
-                            for g in root.findall('./subnet/[subnet-address = "'+naddy+'"]/host/[address = "'+ip+'"]/gobuster'):
-                                if g.text:
-                                    gb = g.text.splitlines()
-                                    gb = '\n     '.join(gb)
-                                    enumtext = '\n ========> GOBUSTER:\n{0}'.format(gb)
-                                else:
-                                    enumtext = ''
+                                for g in root.findall('./subnet/[subnet-address = "'+naddy+'"]/host/[address = "'+ip+'"]/gobuster'):
+                                    if g.text:
+                                        enumtext = '{0}\n ========> GOBUSTER FOR {1}:{2}:\n{3}'.format(enumtext, naddy, pp, g.text)
+                                    else:
+                                        enumtext = ''
+                            except:
+                                pass
 
                             if pflag == 0:
                                 printtext = printtext
 
-                            printret = '{0}{1}'.format(printret, printtext, enumtext)         
+                            printret = '{0}{1}{2}'.format(printret, printtext, enumtext)         
                             plist.remove(pp)
         except:
-            pass
+            pass    
         return printret
 
 
