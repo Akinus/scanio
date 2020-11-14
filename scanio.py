@@ -672,16 +672,13 @@ class scanjobs(object):
 
         if result == '0\n':
             retval = '{0}'.format(addy)
-            ##NMAP scan
+            ##NMAP scan and banner Grab
             if robust:
                 robust = self.robustScan(addy, tp)
+                banner = robust[13:100].replace('\n', ' ').replace('   ', '')
             else:
                 robust = ''
-            #Banner Grab
-            if robust == '':
                 banner = self.bannerGrab(timeout, addy, tp, currcount)
-            else:
-                banner = robust[13:100].replace('\n', ' ').replace('   ', '')
             addyStr = './subnet/host/[address = "'+str(addy)+'"]'
             tree = ET.parse(self.file)
             root = tree.getroot()
@@ -693,8 +690,9 @@ class scanjobs(object):
                 self.addPort(addy, tp, banner, robust)
             
             if enum:
-                if search('http', banner) or search('HTTP', banner):
+                if banner.find('http'):
                     domain = 'http://'
+                    # print(domain+addy+':'+tp)
                     gobuster = self.gobusterScan(domain, addy, tp)
                     self.addGobuster(addy, gobuster)
 
@@ -745,7 +743,7 @@ class scanjobs(object):
 
     def gobusterScan(self, domain, addy, port):
         try:
-            tcp_args = 'timeout 300 bash -c "gobuster dir -u '+domain+addy+':'+port+' -t 35 --wordlist=\"/usr/share/seclists/Discovery/Web-Content/directory-list-2.3-small.txt\""'
+            tcp_args = 'timeout 300 bash -c "gobuster dir -u '+str(domain)+str(addy)+':'+str(port)+' -t 35 --wordlist=\"/usr/share/seclists/Discovery/Web-Content/directory-list-2.3-small.txt\""'
             tcp_res = sub.Popen(tcp_args, stdout = sub.PIPE, stderr = sub.PIPE, universal_newlines = True, shell = True)
             tcp_res.wait(301)
             out, err = tcp_res.communicate()
