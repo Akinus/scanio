@@ -692,7 +692,7 @@ class scanjobs(object):
             if enum:
                 if banner.find('http'):
                     domain = 'http://'
-                    # print(domain+addy+':'+tp)
+                    # print(str(domain)+str(addy)+':'+str(tp))
                     gobuster = self.gobusterScan(domain, addy, tp)
                     self.addGobuster(addy, gobuster)
 
@@ -743,7 +743,8 @@ class scanjobs(object):
 
     def gobusterScan(self, domain, addy, port):
         try:
-            tcp_args = 'timeout 300 bash -c "gobuster dir -u '+str(domain)+str(addy)+':'+str(port)+' -t 35 --wordlist=\"/usr/share/seclists/Discovery/Web-Content/directory-list-2.3-small.txt\""'
+            tcp_args = 'timeout 300 bash -c "gobuster dir -u '+str(domain)+str(addy)+':'+str(port)+' -t 35 --wordlist=\'/usr/share/seclists/Discovery/Web-Content/directory-list-2.3-small.txt\'"'
+            print(tcp_args)
             tcp_res = sub.Popen(tcp_args, stdout = sub.PIPE, stderr = sub.PIPE, universal_newlines = True, shell = True)
             tcp_res.wait(301)
             out, err = tcp_res.communicate()
