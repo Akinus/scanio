@@ -749,7 +749,7 @@ class scanjobs(object):
             out, err = tcp_res.communicate()
             tcp_res.kill()
         except (Exception, KeyboardInterrupt, SystemExit):
-            out = 'ERROR'
+            out = err
             # print(err)
             # raise Exception
 
