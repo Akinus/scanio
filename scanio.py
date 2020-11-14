@@ -1421,7 +1421,7 @@ class display(object):
                                     printtext = '\n|__ {0}'.format(rb)
                                     pflag = 1
 
-                            for g in root.findall('./subnet/[subnet-address = "'+naddy+'"]/host/[address = "'+ip+'"]/gobuster':
+                            for g in root.findall('./subnet/[subnet-address = "'+naddy+'"]/host/[address = "'+ip+'"]/gobuster'):
                                 if g.text:
                                     gb = g.text.splitlines()
                                     gb = '\n     '.join(gb)
