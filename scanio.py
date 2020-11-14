@@ -1421,10 +1421,19 @@ class display(object):
                                     printtext = '\n|__ {0}'.format(rb)
                                     pflag = 1
 
+                            for g in root.findall('./subnet/[subnet-address = "'+naddy+'"]/host/[address = "'+ip+'"]/gobuster':
+                                if g.text:
+                                    gb = g.text.splitlines()
+                                    gb = '\n     '.join(gb)
+                                    enumtext = '\n ========> GOBUSTER:\n{0}'.format(gb)
+                                    pflag = 1
+                                else:
+                                    enumtext = ''
+
                             if pflag == 0:
                                 printtext = printtext
 
-                            printret = '{0}{1}'.format(printret, printtext)         
+                            printret = '{0}{1}'.format(printret, printtext, enumtext)         
                             plist.remove(pp)
             else:
                 naddy = addy
@@ -1468,11 +1477,20 @@ class display(object):
                                     rb = '\n     '.join(rb)
                                     printtext = '\n|__ {0}'.format(rb)
                                     pflag = 1
+                                    
+                            for g in root.findall('./subnet/[subnet-address = "'+naddy+'"]/host/[address = "'+ip+'"]/gobuster':
+                                if g.text:
+                                    gb = g.text.splitlines()
+                                    gb = '\n     '.join(gb)
+                                    enumtext = '\n ========> GOBUSTER:\n{0}'.format(gb)
+                                    pflag = 1
+                                else:
+                                    enumtext = ''
 
                             if pflag == 0:
                                 printtext = printtext
 
-                            printret = '{0}{1}'.format(printret, printtext)         
+                            printret = '{0}{1}'.format(printret, printtext, enumtext)         
                             plist.remove(pp)
         except:
             pass
