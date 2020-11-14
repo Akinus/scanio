@@ -744,7 +744,6 @@ class scanjobs(object):
     def gobusterScan(self, domain, addy, port):
         try:
             tcp_args = 'timeout 300 bash -c "gobuster dir -u '+str(domain)+str(addy)+':'+str(port)+' -t 35 --wordlist=\'/usr/share/seclists/Discovery/Web-Content/directory-list-2.3-small.txt\'"'
-            print(tcp_args)
             tcp_res = sub.Popen(tcp_args, stdout = sub.PIPE, stderr = sub.PIPE, universal_newlines = True, shell = True)
             tcp_res.wait(301)
             out, err = tcp_res.communicate()
@@ -1426,7 +1425,6 @@ class display(object):
                                     gb = g.text.splitlines()
                                     gb = '\n     '.join(gb)
                                     enumtext = '\n ========> GOBUSTER:\n{0}'.format(gb)
-                                    pflag = 1
                                 else:
                                     enumtext = ''
 
@@ -1483,7 +1481,6 @@ class display(object):
                                     gb = g.text.splitlines()
                                     gb = '\n     '.join(gb)
                                     enumtext = '\n ========> GOBUSTER:\n{0}'.format(gb)
-                                    pflag = 1
                                 else:
                                     enumtext = ''
 
