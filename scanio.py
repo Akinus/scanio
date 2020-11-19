@@ -499,7 +499,7 @@ class scanjobs(object):
             thread.start()                                  # Start the execution
 
 
-            while results._number_left < totalcount.value:
+            while currcount.value < totalcount.value:
                 # tsize = str(shutil.get_terminal_size((80, 20))).split(',')[0].split('=')[1]
                 remaining = currcount.value
                 progress = remaining / totalcount.value
