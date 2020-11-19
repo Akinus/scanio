@@ -951,7 +951,7 @@ class io(object):
         show = display()
         pass
 
-    def process_results(self, queue, currcount, totalcount, progtext, net, znote, netgraph):
+    def process_results(self, queue, currcount, totalcount, progtext, net, znote, graph):
         write = io()
         q = queue
 
@@ -960,7 +960,7 @@ class io(object):
             if znote:
                 write.newZnote(variable)
 
-            if netgraph:
+            if graph:
                 netgraph()
 
             with counter_lock:
