@@ -466,7 +466,7 @@ class scanjobs(object):
         res = io()
         manager = Manager()
         q = manager.Queue()
-        p = Process(target= res.process_results, args=(q, currcount, totalcount, progtext, net, znote))
+        p = Process(target= res.process_results, args=(q, currcount, totalcount, progtext, net, znote, netmap))
         p.start()
         
         if scanType == 'callScanNC':
@@ -577,9 +577,9 @@ class scanjobs(object):
                 time.sleep(0.01)
 
             ##CLOSE POOL AND CATCHER
-        except Exception:
+        except Exception as e:
             window.kill()
-            print('Exception...')
+            print('Exception...\n{0}'.format(e))
             if p.is_alive:
                 p.terminate()            
         
@@ -951,7 +951,7 @@ class io(object):
         show = display()
         pass
 
-    def process_results(self, queue, currcount, totalcount, progtext, net, znote):
+    def process_results(self, queue, currcount, totalcount, progtext, net, znote, netgraph):
         write = io()
         q = queue
 
@@ -959,6 +959,10 @@ class io(object):
             variable = q.get(True)
             if znote:
                 write.newZnote(variable)
+
+            if netgraph:
+                netgraph()
+
             with counter_lock:
                 currcount.value += 1
 
