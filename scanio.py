@@ -961,7 +961,7 @@ class io(object):
                 write.newZnote(variable)
 
             if graph:
-                netgraph()
+                write.netgraph()
 
             with counter_lock:
                 currcount.value += 1
