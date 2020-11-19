@@ -554,7 +554,9 @@ class scanjobs(object):
             time.sleep(2)
             window.pad.clear()
             while True:
+                currcount.value = totalscans
                 progress = 1
+                block = int(round(barLength*progress))
                 smallProgress = "{:.1f}".format(progress*100)
                 update = "Percent: [{0}] {1}% {2} {3}/{4}. {5}m {6}s spent. ~{7} ports/s\n{8}\n{9} \
 ".format( "#"*block + "-"*(barLength-block), smallProgress, status, currcount.value, totalscans, mon, sec, pps, '***SCAN COMPLETE!***', 'Press q to exit this window...')
