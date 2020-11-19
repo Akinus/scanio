@@ -69,5 +69,9 @@ optional arguments:
 
   -rb, --robust
   ---------------------
-  Runs NMAP -A on found ports. WARNING: THIS WILL DRASTICALLY SLOW DOWN THE SCAN. ***REQUIRES NMAP TO BE INSTALLED***                                             
+  Runs NMAP -A on found ports. WARNING: THIS WILL DRASTICALLY SLOW DOWN THE SCAN. ***REQUIRES NMAP TO BE INSTALLED***        
+
+  -en, --enum
+  ---------------------
+  Runs appropriate enumeration scripts against open ports with found information. For instance, if the banner or robust information returns an http service running on port 443, it will run http-vuln* (nmap), gobuster, etc... on that port.                                     
 
