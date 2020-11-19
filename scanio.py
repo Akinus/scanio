@@ -17,6 +17,7 @@ from itertools import repeat
 import subprocess as sub
 from subprocess import STDOUT, check_output
 from re import search
+import concurrent.futures
 import ctypes
 import functools
 import time
@@ -147,8 +148,8 @@ class scanjobs(object):
                                                     the potential to miss some ports.  REQUIRES NETCAT to be installed. \
                                                     ", action="store_true")
         uinput.add_argument("-en", "--enumerate", help = "Performs Nikto, Gobuster, http-vuln NMAP, smb-vuln NMAP, \
-                                                    WPScan, and Searchsploit scans on found pertinent services \
-                                                    REQUIRES THOSE PROGRAMS to be installed or these scans will fail. \
+                                                    WPScan, and Searchsploit scans on found pertinent services. \
+                                                    REQUIRES THOSE PROGRAMS AND SECLISTS to be installed or these scans will fail. \
                                                     ", action="store_true")                                            
         uinput.add_argument("--show", help = "Shows the currently logged results for the address.  When used with --map \
                                                 this will recreate the network map also", action="store_true")
@@ -360,6 +361,8 @@ class scanjobs(object):
         return selection
 
     def seconds(self, _secs):
+        _secs.value += 1
+        time.sleep(2)
         while True:
             _secs.value += 1
             time.sleep(1)
@@ -384,6 +387,7 @@ class scanjobs(object):
         global progtext
         global lock
         global counter_lock
+        global totalcount
         lock = Lock()
         manager = multiprocessing.Manager()
         count = manager.Value('i', 0)
@@ -391,6 +395,7 @@ class scanjobs(object):
         # count = Value('i', 1)
         secs = Value('i', 0)
         flag = Value('i', 0)
+        totalcount = Value('i', 0)
         progtext = Value(ctypes.c_wchar_p, ' ')
         currcount = count
 
@@ -455,7 +460,7 @@ class scanjobs(object):
                 self.addSubnet(threeoctet)
 
         ##DETERMINE TOTAL NUMBER OF SCANS
-        totalcount = self.totalcount(hosts, ports)[0]
+        totalcount.value = self.totalcount(hosts, ports)[0]
     
         ##START RESULTS CATCHER
         res = io()
@@ -471,26 +476,35 @@ class scanjobs(object):
 
         ##BEGIN SCAN THREADS
         addys = self.totalcount(hosts, ports)[1]
-        pool = multiprocessing.Pool(processes=200, maxtasksperchild=100)
+        pool = multiprocessing.Pool(processes=100, maxtasksperchild=100)
         results = pool.map_async(func, addys)
+        # scanPool = concurrent.futures.ThreadPoolExecutor(max_workers=200)
+        
 
         try:
+            # time.sleep(5)
+            # print(results._number_left)
+            # sys.exit()
+
             window = _window()
             ##BEGIN UPDATING WINDOW
             mypad_pos = window.mypad_pos
-            with counter_lock:
-                currcount.value += 5
-            
+            # with counter_lock:
+            #     currcount.value += 1
+
+
             ###START THREADS FOR PROGRESS TIME AND SCREEN
             thread = threading.Thread(target=self.seconds, args=(secs,))
             thread.daemon = True                            # Daemonize thread
             thread.start()                                  # Start the execution
 
-            while currcount.value < totalscans:
+
+            while results._number_left < totalcount.value:
                 # tsize = str(shutil.get_terminal_size((80, 20))).split(',')[0].split('=')[1]
-                progress = currcount.value / totalscans
+                remaining = currcount.value
+                progress = remaining / totalcount.value
                 if float(secs.value) > 0:
-                    pps = currcount.value / float(secs.value)
+                    pps = remaining / float(secs.value)
                     pps = "{:.0f}".format(pps)
                 mon, sec = divmod(float(secs.value), 60)
                 mon = "{:.0f}".format(mon)
@@ -535,25 +549,18 @@ class scanjobs(object):
                     window.pad.refresh(mypad_pos, 0, 1, 1, window.height, window.width)
                 
                 time.sleep(0.01)
-            found = results.get()
-            found = list(dict.fromkeys(found))
+            # found = results.get()
+            # found = list(dict.fromkeys(found))
             time.sleep(2)
             window.pad.clear()
-            progress = 1
-            smallProgress = "{:.1f}".format(progress*100)
-            update = "Percent: [{0}] {1}% {2} {3}/{4}. {5}m {6}s spent. ~{7} ports/s\n{8}\n{9} \
-".format( "#"*block + "-"*(barLength-block), smallProgress, status, currcount.value, totalscans, mon, sec, pps, '***SCAN COMPLETE!***', 'Press q to exit this window...')
-            progtext.value = show.printall(net)[0]
-            length = len(str(progtext.value).splitlines()) + 10
-            window.pad.resize(length, window.width)
-            window.pad.addstr(1, 1, update)
-            window.pad.addstr(4, 1, progtext.value)
-            window.pad.refresh(mypad_pos, 0, 1, 1, window.height, window.width)
-            window.screen.nodelay(False)
             while True:
+                progress = 1
+                smallProgress = "{:.1f}".format(progress*100)
                 update = "Percent: [{0}] {1}% {2} {3}/{4}. {5}m {6}s spent. ~{7} ports/s\n{8}\n{9} \
 ".format( "#"*block + "-"*(barLength-block), smallProgress, status, currcount.value, totalscans, mon, sec, pps, '***SCAN COMPLETE!***', 'Press q to exit this window...')
                 progtext.value = show.printall(net)[0]
+                length = len(str(progtext.value).splitlines()) + 10
+                window.pad.resize(length, window.width)
                 ch = window.screen.getch()
                 if ch == curses.KEY_DOWN:
                     mypad_pos += 1
@@ -639,11 +646,12 @@ class scanjobs(object):
                 self.addPort(addy, tp, banner, robust)
             
             if enum:
-                if 'http' in banner or 'HTTP' in banner:
-                    domain = 'http://'
-                    # print(str(domain)+str(addy)+':'+str(tp))
-                    gobuster = self.gobusterScan(domain, addy, tp)
-                    self.addGobuster(addy, tp, gobuster)
+                poolx = concurrent.futures.ThreadPoolExecutor(max_workers=6)
+                with poolx:
+                    if 'http' in banner or 'HTTP' in banner:
+                        domain = 'http://'
+                        poolx.submit(self.http_vulnScan, addy, tp)
+                        poolx.submit(self.gobusterScan, domain, addy, tp)
 
             io.sortXML(io(), addy)
             
@@ -689,12 +697,30 @@ class scanjobs(object):
             else:
                 self.addPort(addy, tp, banner, robust)
             
+            
             if enum:
-                if 'http' in banner or 'HTTP' in banner:
-                    domain = 'http://'
-                    # print(str(domain)+str(addy)+':'+str(tp))
-                    gobuster = self.gobusterScan(domain, addy, tp)
-                    self.addGobuster(addy, tp, gobuster)
+                poolx = concurrent.futures.ThreadPoolExecutor(max_workers=4)
+                with poolx:
+                    if 'http' in banner or 'HTTP' in banner:
+                        domain = 'http://'
+                        poolx.submit(self.http_vulnScan, addy, tp)
+                        poolx.submit(self.gobusterScan, domain, addy, tp)
+                    
+                    # httpVuln = Process(target= self.http_vulnScan, args=(addy, tp)) 
+                    # httpVuln.start()
+
+                # while flags != 11:
+                #     if gobuster:
+                #         self.addGobuster(addy, tp, gobuster)
+                #         flags += 1
+                #         gobuster.join()
+                #         gobuster.close()
+                #     if httpVuln:
+                #         self.addhttp_vuln(addy, tp, httpVuln)
+                #         flags += 10
+                #         httpVuln.join()
+                #         gobuster.close()
+
 
             io.sortXML(io(), addy)
         q.put(addy)
@@ -741,6 +767,22 @@ class scanjobs(object):
             out = ''
         return out
 
+    def http_vulnScan(self, addy, port):
+        try:
+            tcp_args = 'timeout 120 bash -c "nmap -T4 --script=http-vuln* -Pn ' + str(addy) + ' -p ' + str(port) + '"'
+            tcp_res = sub.Popen(tcp_args, stdout = sub.PIPE, stderr = sub.PIPE, universal_newlines = True, shell = True)
+            tcp_res.wait(121)
+            out, err = tcp_res.communicate()
+            tcp_res.kill()
+        except (Exception, KeyboardInterrupt, SystemExit):
+            out = 'NMAP-Error.'
+            # raise Exception
+
+        if search('concurrent connection', out):
+            out = ''
+        self.addhttp_vuln(addy, port, out)
+        return
+
     def gobusterScan(self, domain, addy, port):
         try:
             tcp_args = 'timeout 180 bash -c "gobuster dir -u '+str(domain)+str(addy)+':'+str(port)+' -t 35 --wordlist=\'/usr/share/seclists/Discovery/Web-Content/directory-list-2.3-small.txt\'"'
@@ -756,7 +798,8 @@ class scanjobs(object):
         if search('concurrent connection', out):
             out = ''
         
-        return out
+        self.addGobuster(addy, port, out)
+        return
     
     def addSubnet(self, addy):
         pivot = scanjobs.get_ip_address(scanjobs(), addy)
@@ -812,6 +855,26 @@ class scanjobs(object):
             host = subnet.find('./host/[address = "'+addy+'"]')
             newgo = ET.SubElement(host, 'gobuster')
             newgo.text = '\n====================> Gobuster for {0}:{1}\n{2}'.format(addy, port, gobuster)
+            show.indent(root)
+            tree.write(self.file)
+        return
+    
+    def addhttp_vuln(self, addy, port, httpVuln):
+        show = display()
+        httpVuln = httpVuln.splitlines()
+        httpVuln = '\n'.join(httpVuln[4:-1])
+        with lock:
+            sl = addy.split('.')
+            subnetstr = './subnet/[subnet-address = "{0}.{1}.{2}"]'.format(sl[0], sl[1], sl[2])
+            # pivotstr = './subnet/[subnet-address = "{0}.{1}.{2}"]/pivot'.format(sl[0], sl[1], sl[2])
+            tree = ET.parse(self.file)
+            root = tree.getroot()
+            subnet = root.find(subnetstr)
+            # pivot = root.find(pivotstr).text
+            # if addy != pivot:
+            host = subnet.find('./host/[address = "'+addy+'"]')
+            newgo = ET.SubElement(host, 'httpVuln')
+            newgo.text = '\n====================> httpVuln for {0}:{1}\n{2}'.format(addy, port, httpVuln)
             show.indent(root)
             tree.write(self.file)
         return
@@ -892,7 +955,7 @@ class io(object):
         write = io()
         q = queue
 
-        while currcount.value < totalcount:
+        while currcount.value < totalcount.value:
             variable = q.get(True)
             if znote:
                 write.newZnote(variable)
@@ -1047,108 +1110,129 @@ class io(object):
         show = display()
         data = ''
         godata = ''
-        for h in show.printall(net)[3]:
-            addy = h
-            data = show.printall(h)[1]
-            naddy = '{0}.{1}.{2}'.format(addy.split('.')[0], addy.split('.')[1], addy.split('.')[2])
-            cherry = addy + '.ctd'
-            if os.path.exists(cherry):
-                cherrylink = '[[.\\{0}|{1}]]'.format(cherry, cherry)
-            else:
-                cherrylink = ' '
-            paths = []
-            if os.name == 'nt':
-                sep = '\\'
-            else:
-                sep = '/'
-            
-            opath = os.getcwd()
-            addypath = opath + sep + addy
-            addyfile = addy + '.txt'
-            ipheader = 'Content-Type: text/x-zim-wiki\nWiki-Format: zim 0.4\nCreation-Date: 2020-10-28T20:13:55-07:00\n\
-    ====== ' + addy + ' ======\nCreated Wednesday 28 October 2020\n'
-            with open(addyfile, 'w') as fp:
-                fp.write(ipheader)
-                fp.write(cherrylink)
-                fp.close()
+        httpVulndata = ''
+        try:
+            for h in show.printall(net)[3]:
+                addy = h
+                data = show.printall(h)[1]
+                naddy = '{0}.{1}.{2}'.format(addy.split('.')[0], addy.split('.')[1], addy.split('.')[2])
+                cherry = addy + '.ctd'
+                if os.path.exists(cherry):
+                    cherrylink = '[[.\\{0}|{1}]]'.format(cherry, cherry)
+                else:
+                    cherrylink = ' '
+                paths = []
+                if os.name == 'nt':
+                    sep = '\\'
+                else:
+                    sep = '/'
+                
+                opath = os.getcwd()
+                addypath = opath + sep + addy
+                addyfile = addy + '.txt'
+                ipheader = 'Content-Type: text/x-zim-wiki\nWiki-Format: zim 0.4\nCreation-Date: 2020-10-28T20:13:55-07:00\n\
+        ====== ' + addy + ' ======\nCreated Wednesday 28 October 2020\n'
+                with open(addyfile, 'w') as fp:
+                    fp.write(ipheader)
+                    fp.write(cherrylink)
+                    fp.close()
 
-            try:
-                if os.path.exists(addypath) == False:
-                    os.mkdir(addypath)
-            except OSError:
-                print ("Creation of the directory %s failed" % addypath)
-            # else:
-                # print ("Successfully created the directory %s " % addypath)
-
-            text='Content-Type: text/x-zim-wiki\nWiki-Format: zim 0.4\nCreation-Date: 2020-11-01T13:29:00-08:00\n\
-====== Methodology ======\nCreated Sunday 01 November 2020\n\n\
-==== Network Enumeration: ====\n\
-1. [[+Network_Enumeration:TCP|TCP]]\n\
-2. [[+Network Enumeration:Nikto|Nikto]]\n\
-3. [[+Network_Enumeration:Gobuster|Gobuster]]\n\
-4. [[+Network_Enumeration:NMAP|NMAP]]\n\
-5. [[+Network_Enumeration:WPScan|WPScan]]\n\
-\n\
-==== Individual Host Enumeration ====\n\
-1. [[+Host_Enumeration:Linpeas|Linpeas.sh]]\n\
-2. [[+Host_Enumeration:Enum4Linux|Enum4Linux]]\n\
-3. [[+Host_Enumeration:Writable_Files|Writable Files]]\n\
-4. [[+Host_Enumeration:Writable Folders|Writable Folders]]\n\
-5. [[+Host_Enumeration:Running_Processes|Running Processes]]\n\
-6. [[+Host_Enumeration:Users|Users]]\n\
-7. [[+Host_Enumeration:Groups|Groups]]\n\
-8. [[+Host_Enumeration:Interesting Places and Files|Interesting Places and Files]]\n\
-9. [[+Host_Enumeration:Connections|Connections]]\n\
-10.[[+Host_Enumeration:SUID|SUID]]\n\
-\n\
-==== Privilege Escalation ====\n\
-1. [[+Privilege Escalation:Searchsploit (exploit-db)|Searchsploit (exploit-db)]]\n\
-2. [[+Privilege Escalation:Sudo -l|Sudo -l]]\n\
-3. [[+Privilege Escalation:Metasploit|Metasploit]]\n\
-\n\
-==== Proof ====\n\
-1. [[+Proof:Hashes|Hashes]]\n\
-2. [[+Proof:Credentials|Credentials]]\n\
-3. [[+Proof:Screenshots|Screenshots]]\n\
-4. [[+Proof:Proof-of-root Screenshots|Proof-of-root Screenshots]]'
-            filepath = addypath + sep + 'Methodology.txt'
-            open(filepath, 'w').write(text)
-
-            enumpath = addypath + sep + 'Methodology' + sep + 'Network_Enumeration'
-            paths.append(enumpath)
-
-            for path in paths:
                 try:
-                    if os.path.exists(path) == False:
-                        os.makedirs(path)
+                    if os.path.exists(addypath) == False:
+                        os.mkdir(addypath)
                 except OSError:
-                    print ("Creation of the directory %s failed" % path)
+                    print ("Creation of the directory %s failed" % addypath)
                 # else:
-                    # print ("Successfully created the directory %s " % path)
+                    # print ("Successfully created the directory %s " % addypath)
 
-            datapath = enumpath + sep + 'TCP.txt'
-            open(datapath, 'w').write(data)
+                text='Content-Type: text/x-zim-wiki\nWiki-Format: zim 0.4\nCreation-Date: 2020-11-01T13:29:00-08:00\n\
+    ====== Methodology ======\nCreated Sunday 01 November 2020\n\n\
+    ==== Network Enumeration: ====\n\
+    1. [[+Network_Enumeration:TCP|TCP]]\n\
+    2. [[+Network Enumeration:Nikto|Nikto]]\n\
+    3. [[+Network_Enumeration:Gobuster|Gobuster]]\n\
+    4. [[+Network_Enumeration:NMAP|NMAP]]\n\
+    5. [[+Network_Enumeration:WPScan|WPScan]]\n\
+    \n\
+    ==== Individual Host Enumeration ====\n\
+    1. [[+Host_Enumeration:Linpeas|Linpeas.sh]]\n\
+    2. [[+Host_Enumeration:Enum4Linux|Enum4Linux]]\n\
+    3. [[+Host_Enumeration:Writable_Files|Writable Files]]\n\
+    4. [[+Host_Enumeration:Writable Folders|Writable Folders]]\n\
+    5. [[+Host_Enumeration:Running_Processes|Running Processes]]\n\
+    6. [[+Host_Enumeration:Users|Users]]\n\
+    7. [[+Host_Enumeration:Groups|Groups]]\n\
+    8. [[+Host_Enumeration:Interesting Places and Files|Interesting Places and Files]]\n\
+    9. [[+Host_Enumeration:Connections|Connections]]\n\
+    10.[[+Host_Enumeration:SUID|SUID]]\n\
+    \n\
+    ==== Privilege Escalation ====\n\
+    1. [[+Privilege Escalation:Searchsploit (exploit-db)|Searchsploit (exploit-db)]]\n\
+    2. [[+Privilege Escalation:Sudo -l|Sudo -l]]\n\
+    3. [[+Privilege Escalation:Metasploit|Metasploit]]\n\
+    \n\
+    ==== Proof ====\n\
+    1. [[+Proof:Hashes|Hashes]]\n\
+    2. [[+Proof:Credentials|Credentials]]\n\
+    3. [[+Proof:Screenshots|Screenshots]]\n\
+    4. [[+Proof:Proof-of-root Screenshots|Proof-of-root Screenshots]]'
+                filepath = addypath + sep + 'Methodology.txt'
+                open(filepath, 'w').write(text)
 
-            ####### GOBUSTER ADD TEXT
-            gopath = enumpath + sep + 'Gobuster.txt'
-            gobusters = None
-            try:
-                tree = ET.parse(self.rootfile)
-                root = tree.getroot()
-                gobusters = root.findall('./subnet/[subnet-address = "'+naddy+'"]/host/[address = "'+addy+'"]/gobuster')
-            except:
-                pass
-            if gobusters:
-                for g in gobusters:
-                    if g.text:
-                        godata = '{0}\n{1}'.format(godata, g.text)
-                    else:
-                        pass
+                enumpath = addypath + sep + 'Methodology' + sep + 'Network_Enumeration'
+                paths.append(enumpath)
 
-                open(gopath, 'w').write(godata)
+                for path in paths:
+                    try:
+                        if os.path.exists(path) == False:
+                            os.makedirs(path)
+                    except OSError:
+                        print ("Creation of the directory %s failed" % path)
+                    # else:
+                        # print ("Successfully created the directory %s " % path)
 
-            ######
+                datapath = enumpath + sep + 'TCP.txt'
+                open(datapath, 'w').write(data)
 
+                ####### GOBUSTER ADD TEXT
+                gopath = enumpath + sep + 'Gobuster.txt'
+                gobusters = None
+                try:
+                    tree = ET.parse(self.rootfile)
+                    root = tree.getroot()
+                    gobusters = root.findall('./subnet/[subnet-address = "'+naddy+'"]/host/[address = "'+addy+'"]/gobuster')
+                except:
+                    pass
+                if gobusters:
+                    for g in gobusters:
+                        if g.text:
+                            godata = '{0}\n{1}'.format(godata, g.text)
+                        else:
+                            pass
+
+                    open(gopath, 'w').write(godata)
+
+                ######
+
+                ####### httpVuln ADD TEXT
+                http_vulnpath = enumpath + sep + 'http-vuln.txt'
+                httpVulns = None
+                try:
+                    tree = ET.parse(self.rootfile)
+                    root = tree.getroot()
+                    httpVulns = root.findall('./subnet/[subnet-address = "'+naddy+'"]/host/[address = "'+addy+'"]/httpVuln')
+                except:
+                    pass
+                if httpVulns:
+                    for hv in httpVulns:
+                        if hv.text:
+                            httpVulndata = '{0}\n{1}'.format(httpVulndata, hv.text)
+                        else:
+                            pass
+
+                    open(http_vulnpath, 'w').write(httpVulndata)
+        except:
+            pass
         return
 
     def newCnote(self, addy, data):
@@ -1401,12 +1485,13 @@ class display(object):
                 elem.tail = i
     
     def printall(self, addy):
+        enumtext = ''
+        printret = ''
+        all_results = ''
+        hlist = list()
+        plist = list()
         try:
-            enumtext = ''
-            printret = ''
-            all_results = ''
-            hlist = list()
-            plist = list()
+            
             if len(addy.split('.')) > 3:
                 laddy = addy.split('.')
                 naddy = '{0}.{1}.{2}'.format(laddy[0], laddy[1], laddy[2])
@@ -1462,12 +1547,19 @@ class display(object):
                             printret = '{0}{1}'.format(printret, printtext)         
                             plist.remove(pp)
                         
-                        for g in root.findall('./subnet/[subnet-address = "'+naddy+'"]/host/[address = "'+ip+'"]/gobuster'):
-                            if g.text:
-                                enumtext = '{0}\n{1}'.format(enumtext, g.text)
-                            else:
-                                enumtext = ''
+                    for g in root.findall('./subnet/[subnet-address = "'+naddy+'"]/host/[address = "'+ip+'"]/gobuster'):
+                        if g.text:
+                            enumtext = '{0}\n{1}'.format(enumtext, g.text)
+                        else:
+                            pass
+                    
+                    for vuln in root.findall('./subnet/[subnet-address = "'+naddy+'"]/host/[address = "'+ip+'"]/httpVuln'):
+                        if vuln.text:
+                            enumtext = '{0}\n{1}'.format(enumtext, vuln.text)
+                        else:
+                            pass
                         # printret = '{0}{1}'.format(printret, enumtext)
+                all_results = '{0}{1}'.format(printret, enumtext)         
             else:
                 naddy = addy
                 tree = ET.parse(self.rootfile)
@@ -1522,12 +1614,17 @@ class display(object):
                             if g.text:
                                 enumtext = '{0}\n{1}'.format(enumtext, g.text)
                             else:
-                                enumtext = ''
+                                pass
+                        
+                        for vuln in root.findall('./subnet/[subnet-address = "'+naddy+'"]/host/[address = "'+ip+'"]/httpVuln'):
+                            if vuln.text:
+                                enumtext = '{0}\n{1}'.format(enumtext, vuln.text)
+                            else:
+                                pass
                         # printret = '{0}{1}'.format(printret, enumtext) 
-            all_results = '{0}{1}'.format(printret, enumtext) 
+                all_results = '{0}{1}'.format(printret, enumtext)
         except:
             pass
-           
         return all_results, printret, enumtext, hlist
 
 
