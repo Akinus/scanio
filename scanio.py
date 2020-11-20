@@ -392,17 +392,18 @@ class scanjobs(object):
         manager = multiprocessing.Manager()
         count = manager.Value('i', 0)
         counter_lock = manager.Lock()  # pylint: disable=no-member
-        # count = Value('i', 1)
         secs = Value('i', 0)
         flag = Value('i', 0)
         totalcount = Value('i', 0)
         progtext = Value(ctypes.c_wchar_p, ' ')
         currcount = count
 
+        ##DEFINE OTHER CLASSES LOCALLY
         write = io()
         show = display()
+
+        ## GATHER OPTIONS INFO
         scanInfo = self.initiate()
-        #return operation, net, final_range, final_ports, totalscans, printnet, clearlog, netmap, robust, cNote, zNote, fulladd, proxy, hosts
         scanType = scanInfo[0]
         net = scanInfo[1]
         final_range = scanInfo[2]
@@ -419,15 +420,12 @@ class scanjobs(object):
         hosts = scanInfo[13]
         enum = scanInfo[14]
         
-        # print(show.printall(net)[3])
-        # sys.exit()
-
         if clearlog:
             write.clearLog()
         
         self.newScan(net)
         
-        ####################### BEGIN PROCESSING
+        ## BEGIN PROCESSING
         if len(net.split('.')) > 3:
             threeoctet = '{0}.{1}.{2}'.format(net.split('.')[0], net.split('.')[1], net.split('.')[2])
             ##REMOVE ADDRESS IF IT EXISTS
@@ -469,38 +467,30 @@ class scanjobs(object):
         p = Process(target= res.process_results, args=(q, currcount, totalcount, progtext, net, znote, netmap))
         p.start()
         
+        ##BEGIN SCAN THREADS
         if scanType == 'callScanNC':
             func = functools.partial(self.callScanNC, timeout, currcount, q, robust, enum)
         else:
             func = functools.partial(self.callScanP, timeout, currcount, q, robust, enum)
 
-        ##BEGIN SCAN THREADS
         addys = self.totalcount(hosts, ports)[1]
-        pool = multiprocessing.Pool(processes=100, maxtasksperchild=100)
+        pool = multiprocessing.Pool(processes=200, maxtasksperchild=100)
         results = pool.map_async(func, addys)
         # scanPool = concurrent.futures.ThreadPoolExecutor(max_workers=200)
         
 
         try:
-            # time.sleep(5)
-            # print(results._number_left)
-            # sys.exit()
-
-            window = _window()
             ##BEGIN UPDATING WINDOW
+            window = _window()
             mypad_pos = window.mypad_pos
-            # with counter_lock:
-            #     currcount.value += 1
-
 
             ###START THREADS FOR PROGRESS TIME AND SCREEN
             thread = threading.Thread(target=self.seconds, args=(secs,))
             thread.daemon = True                            # Daemonize thread
             thread.start()                                  # Start the execution
 
-
+            ## MAIN DISPLAY LOOP
             while results._number_left > 0:
-                # tsize = str(shutil.get_terminal_size((80, 20))).split(',')[0].split('=')[1]
                 remaining = currcount.value
                 progress = remaining / totalcount.value
                 if float(secs.value) > 0:
@@ -524,7 +514,6 @@ class scanjobs(object):
                     status = "Done...                                                           \r\n"
                 block = int(round(barLength*progress))
                 smallProgress = "{:.1f}".format(progress*100)
-                # printext = self.printall(net)
                 update = "Percent: [{0}] {1}% {2} {3}/{4}. {5}m {6}s spent. ~{7} ports/s    ".format( "#"*block + "-"*(barLength-block), smallProgress, status, currcount.value, totalscans, mon, sec, pps)
                 progtext.value = show.printall(printnet)[0]
                 length = len(str(progtext.value).splitlines()) + 10
@@ -532,7 +521,6 @@ class scanjobs(object):
                 window.pad.addstr(1, 1, update)
                 window.pad.addstr(2, 1, progtext.value)
                 window.pad.refresh(mypad_pos, 0, 1, 1, window.height, window.width)
-                
                 
                 ## CATCH KEYS
                 ch = window.screen.getch()
@@ -544,13 +532,12 @@ class scanjobs(object):
                     window.pad.refresh(mypad_pos, 0, 1, 1, window.height, window.width)
                 elif ch == ord('q'):
                     raise KeyboardInterrupt
-                    # print("You'll have to press ctrl-c to deliver the death blow...")
                 else:
                     window.pad.refresh(mypad_pos, 0, 1, 1, window.height, window.width)
                 
                 time.sleep(0.01)
-            # found = results.get()
-            # found = list(dict.fromkeys(found))
+            
+            ##SCANS FINISHED##
             time.sleep(2)
             window.pad.clear()
             while True:
@@ -578,7 +565,6 @@ class scanjobs(object):
                     window.pad.refresh(mypad_pos, 0, 1, 1, window.height, window.width)
                 time.sleep(0.01)
 
-            ##CLOSE POOL AND CATCHER
         except Exception as e:
             window.kill()
             print('Exception...\n{0}'.format(e))
@@ -604,26 +590,21 @@ class scanjobs(object):
             print(results)
             print('\n############################ END ##########################\n')
             sys.tracebacklimit=0
+            #####------ END OF SCRIPT ------####
             
     def callScanNC(self, timeout, currcount, q, robust, enum, addys):
         addy = addys[0]
         tp = addys[1]
         retval = None
-        # print('Scanning {0}:{1}. Timeout of {2}'.format(addy, tp, timeout))
-        # time.sleep(5)
-        # q.put('Scanning {0}'.format(addy))
         try:
             tcp_args = ['timeout '+str(timeout+1)+' /bin/bash -c "nc -nvz -w '+str(timeout+1)+' '+str(addy)+' '+str(tp)+' 2>&1"']
             tcp_res = sub.Popen(tcp_args, stdout = sub.PIPE, stderr = sub.PIPE, universal_newlines = True, shell = True)
             tcp_res.wait(timeout)
             result, err = tcp_res.communicate()
             tcp_res.kill()
-            # tcp_args = ['nc -nvzw1 '+str(addy)+' '+str(tp)+' 2>&1']
-            # result = check_output(['nc -nvzw1 '+str(addy)+' '+str(tp)+' 2>&1'], stderr=STDOUT, timeout=0.3)
         except (Exception, KeyboardInterrupt, SystemExit):
             result = 'Encountered and error while scanning {0}'.format(addy)
-            # raise KeyboardInterrupt
-            # print(result, end='\r')
+
 
         if "open" in result or "succ" in result:
             retval = '{0}'.format(addy)
@@ -657,19 +638,14 @@ class scanjobs(object):
 
             io.sortXML(io(), addy)
             
-            # print(result)
+
         q.put(1)    
-        # with counter_lock:
-        #     currcount.value += 1
         return retval
 
     def callScanP(self, timeout, currcount, q, robust, enum, addys):
         addy = addys[0]
         tp = addys[1]
         retval = None
-        # print('Scanning {0}:{1}. Timeout of {2}'.format(addy, tp, timeout))
-        # time.sleep(5)
-        # q.put('Scanning {0}'.format(addy))
         try:
             tcp_args = ['timeout '+str(timeout)+' /bin/bash -c "exec echo > /dev/tcp/'+str(addy)+'/'+str(tp)+'";retval=$?;echo $retval']
             tcp_res = sub.Popen(tcp_args, stdout = sub.PIPE, stderr = sub.PIPE, universal_newlines = True, shell = True)
@@ -678,7 +654,6 @@ class scanjobs(object):
             tcp_res.kill()
         except (Exception, KeyboardInterrupt, SystemExit):
             result = 'Encountered and error while scanning {0}'.format(addy)
-            # raise KeyboardInterrupt
 
         if result == '0\n':
             retval = '{0}'.format(addy)
@@ -708,27 +683,8 @@ class scanjobs(object):
                         poolx.submit(self.http_vulnScan, addy, tp)
                         poolx.submit(self.gobusterScan, domain, addy, tp)
                     
-                    # httpVuln = Process(target= self.http_vulnScan, args=(addy, tp)) 
-                    # httpVuln.start()
-
-                # while flags != 11:
-                #     if gobuster:
-                #         self.addGobuster(addy, tp, gobuster)
-                #         flags += 1
-                #         gobuster.join()
-                #         gobuster.close()
-                #     if httpVuln:
-                #         self.addhttp_vuln(addy, tp, httpVuln)
-                #         flags += 10
-                #         httpVuln.join()
-                #         gobuster.close()
-
-
             io.sortXML(io(), addy)
         q.put(addy)
-        # with counter_lock:
-        # currcount.value += 1
-        # print(result)
         return retval
 
     def bannerGrab(self, timeout, addy, port, currcount):
@@ -740,7 +696,6 @@ class scanjobs(object):
             tcp_res.kill()
         except (Exception, KeyboardInterrupt, SystemExit):
             out = 'BannerError.'
-            # raise Exception
 
         if search('concurrent connection', out):
             out = ''
@@ -757,7 +712,6 @@ class scanjobs(object):
             tcp_res.kill()
         except (Exception, KeyboardInterrupt, SystemExit):
             out = 'NMAP-Error.'
-            # raise Exception
 
         if search('concurrent connection', out):
             out = ''
@@ -778,7 +732,6 @@ class scanjobs(object):
             tcp_res.kill()
         except (Exception, KeyboardInterrupt, SystemExit):
             out = 'NMAP-Error.'
-            # raise Exception
 
         if search('concurrent connection', out):
             out = ''
@@ -794,8 +747,6 @@ class scanjobs(object):
             tcp_res.kill()
         except (Exception, KeyboardInterrupt, SystemExit):
             out = err
-            # print(err)
-            # raise Exception
 
         if search('concurrent connection', out):
             out = ''
@@ -822,12 +773,11 @@ class scanjobs(object):
         with lock:
             sl = addy.split('.')
             subnetstr = './subnet/[subnet-address = "{0}.{1}.{2}"]'.format(sl[0], sl[1], sl[2])
-            # pivotstr = './subnet/[subnet-address = "{0}.{1}.{2}"]/pivot'.format(sl[0], sl[1], sl[2])
+
             tree = ET.parse(self.file)
             root = tree.getroot()
             subnet = root.find(subnetstr)
-            # pivot = root.find(pivotstr).text
-            # if addy != pivot:
+
             newip = ET.SubElement(subnet, 'host')
             newaddr = ET.SubElement(newip, 'address')
             newaddr.text = addy
@@ -848,12 +798,11 @@ class scanjobs(object):
         with lock:
             sl = addy.split('.')
             subnetstr = './subnet/[subnet-address = "{0}.{1}.{2}"]'.format(sl[0], sl[1], sl[2])
-            # pivotstr = './subnet/[subnet-address = "{0}.{1}.{2}"]/pivot'.format(sl[0], sl[1], sl[2])
+
             tree = ET.parse(self.file)
             root = tree.getroot()
             subnet = root.find(subnetstr)
-            # pivot = root.find(pivotstr).text
-            # if addy != pivot:
+
             host = subnet.find('./host/[address = "'+addy+'"]')
             newgo = ET.SubElement(host, 'gobuster')
             newgo.text = '\n====================> Gobuster for {0}:{1}\n{2}'.format(addy, port, gobuster)
@@ -868,12 +817,11 @@ class scanjobs(object):
         with lock:
             sl = addy.split('.')
             subnetstr = './subnet/[subnet-address = "{0}.{1}.{2}"]'.format(sl[0], sl[1], sl[2])
-            # pivotstr = './subnet/[subnet-address = "{0}.{1}.{2}"]/pivot'.format(sl[0], sl[1], sl[2])
+           
             tree = ET.parse(self.file)
             root = tree.getroot()
             subnet = root.find(subnetstr)
-            # pivot = root.find(pivotstr).text
-            # if addy != pivot:
+          
             host = subnet.find('./host/[address = "'+addy+'"]')
             newgo = ET.SubElement(host, 'httpVuln')
             newgo.text = '\n====================> httpVuln for {0}:{1}\n{2}'.format(addy, port, httpVuln)
@@ -888,7 +836,7 @@ class scanjobs(object):
             root = tree.getroot()
             host = root.find(addyStr)
             if search('ssh', banner):
-                # print('SSH PORT FOUND!!')
+             
                 portnum = host.find('./port/[number="'+str(num)+'"]')
                 if portnum == None:
                     newport = ET.SubElement(host, 'port')
@@ -1013,7 +961,7 @@ class io(object):
             # print('\nCreating network map...')
 
             G = pyyed.Graph()
-            # f = plt.figure()
+
 
             bn = 'base'
             G.add_node(bn, label='base')
@@ -1022,7 +970,7 @@ class io(object):
             root = tree.getroot()
             subnets = root.findall('subnet')
             for sub in subnets:
-                # rd = sub.findtext('pivot')
+          
                 sa = sub.findtext('subnet-address')
                 sn = sub.findtext('subnet-name')
 
@@ -1062,7 +1010,7 @@ class io(object):
             with open('scanio.graphml', 'w') as fp:
                 fp.write(G.get_graph())
 
-            # print('Complete!')
+           
         return
 
     def sortXML(self, addy):
