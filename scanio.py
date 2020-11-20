@@ -1551,7 +1551,7 @@ class display(object):
                             if pflag == 0:
                                 printtext = printtext
 
-                            printret = '{0}{1}\n'.format(printret, printtext)         
+                            printret = '{0}{1}'.format(printret, printtext)         
                             plist.remove(pp)
                         
                         for g in root.findall('./subnet/[subnet-address = "'+naddy+'"]/host/[address = "'+ip+'"]/gobuster'):
