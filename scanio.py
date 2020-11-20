@@ -526,7 +526,7 @@ class scanjobs(object):
                 smallProgress = "{:.1f}".format(progress*100)
                 # printext = self.printall(net)
                 update = "Percent: [{0}] {1}% {2} {3}/{4}. {5}m {6}s spent. ~{7} ports/s    ".format( "#"*block + "-"*(barLength-block), smallProgress, status, currcount.value, totalscans, mon, sec, pps)
-                progtext.value = show.printall(net)[0]
+                progtext.value = show.printall(printnet)[0]
                 length = len(str(progtext.value).splitlines()) + 10
                 window.pad.resize(length, window.width)
                 window.pad.addstr(1, 1, update)
@@ -1009,59 +1009,60 @@ class io(object):
         return
     
     def netgraph(self):
-        # print('\nCreating network map...')
+        with lock:
+            # print('\nCreating network map...')
 
-        G = pyyed.Graph()
-        # f = plt.figure()
+            G = pyyed.Graph()
+            # f = plt.figure()
 
-        bn = 'base'
-        G.add_node(bn, label='base')
+            bn = 'base'
+            G.add_node(bn, label='base')
 
-        tree = ET.parse(self.file)
-        root = tree.getroot()
-        subnets = root.findall('subnet')
-        for sub in subnets:
-            # rd = sub.findtext('pivot')
-            sa = sub.findtext('subnet-address')
-            sn = sub.findtext('subnet-name')
+            tree = ET.parse(self.file)
+            root = tree.getroot()
+            subnets = root.findall('subnet')
+            for sub in subnets:
+                # rd = sub.findtext('pivot')
+                sa = sub.findtext('subnet-address')
+                sn = sub.findtext('subnet-name')
 
-            subnetText = 'Subnet:\n{0}\n{1}'.format(sa, sn)
+                subnetText = 'Subnet:\n{0}\n{1}'.format(sa, sn)
 
-            G.add_node(sa, label=subnetText, shape="roundrectangle")
-            G.add_edge(bn, sa, label=scanjobs.get_ip_address(scanjobs(), sa), arrowhead="none")
-            hosts = sub.findall('host')
-            plist = list()
-            for h in hosts:
-                portnums = 'Ports:'
-                addy = h.find('address').text
-                ports = h.findall('port')
-                hostname = h.find('hostname').text
-                for p in ports:
-                    plist.append(int(p.findtext('number')))
+                G.add_node(sa, label=subnetText, shape="roundrectangle")
+                G.add_edge(bn, sa, label=scanjobs.get_ip_address(scanjobs(), sa), arrowhead="none")
+                hosts = sub.findall('host')
+                plist = list()
+                for h in hosts:
+                    portnums = 'Ports:'
+                    addy = h.find('address').text
+                    ports = h.findall('port')
+                    hostname = h.find('hostname').text
+                    for p in ports:
+                        plist.append(int(p.findtext('number')))
 
-                for var in sorted(plist):
-                    spacelen = 5 - len(str(var))
-                    port = str(var)+' '*spacelen
-                    for b in root.findall('./subnet/[subnet-address = "'+sa+'"]/host/[address = "'+addy+'"]/port/[number = "'+str(var)+'"]/banner'):
-                        if b.text:
-                            banner = b.text
-                            portext = '{0} --> {1}'.format(port, banner[:20])   
-                        else:
-                            portext = '{0}     {1}'.format(port, ' '*30)
-                    portnums = '{0}\n{1}'.format(portnums, portext)
-                    plist.remove(var)  
+                    for var in sorted(plist):
+                        spacelen = 5 - len(str(var))
+                        port = str(var)+' '*spacelen
+                        for b in root.findall('./subnet/[subnet-address = "'+sa+'"]/host/[address = "'+addy+'"]/port/[number = "'+str(var)+'"]/banner'):
+                            if b.text:
+                                banner = b.text
+                                portext = '{0} --> {1}'.format(port, banner[:20])   
+                            else:
+                                portext = '{0}     {1}'.format(port, ' '*30)
+                        portnums = '{0}\n{1}'.format(portnums, portext)
+                        plist.remove(var)  
 
-                if hostname == None:
-                    hostname = 'Hostname Unknown'
-                nodeText = '{0}\n{1}\n{2}'.format(addy, hostname, portnums)
-                G.add_node(addy, label=nodeText, shape="roundrectangle")
-                G.add_edge(sa, addy, arrowhead="none")
-                
-    
-        with open('scanio.graphml', 'w') as fp:
-            fp.write(G.get_graph())
+                    if hostname == None:
+                        hostname = 'Hostname Unknown'
+                    nodeText = '{0}\n{1}\n{2}'.format(addy, hostname, portnums)
+                    G.add_node(addy, label=nodeText, shape="roundrectangle")
+                    G.add_edge(sa, addy, arrowhead="none")
+                    
+        
+            with open('scanio.graphml', 'w') as fp:
+                fp.write(G.get_graph())
 
-        # print('Complete!')
+            # print('Complete!')
         return
 
     def sortXML(self, addy):
@@ -1550,22 +1551,24 @@ class display(object):
                             if pflag == 0:
                                 printtext = printtext
 
-                            printret = '{0}{1}'.format(printret, printtext)         
+                            printret = '{0}{1}\n'.format(printret, printtext)         
                             plist.remove(pp)
                         
-                    for g in root.findall('./subnet/[subnet-address = "'+naddy+'"]/host/[address = "'+ip+'"]/gobuster'):
-                        if g.text:
-                            enumtext = '{0}\n{1}'.format(enumtext, g.text)
-                        else:
-                            pass
+                        for g in root.findall('./subnet/[subnet-address = "'+naddy+'"]/host/[address = "'+ip+'"]/gobuster'):
+                            if g.text:
+                                enumtext = '{0}\n{1}'.format(enumtext, g.text)
+                            else:
+                                enumtext = ''
+                        
+                        for vuln in root.findall('./subnet/[subnet-address = "'+naddy+'"]/host/[address = "'+ip+'"]/httpVuln'):
+                            if vuln.text:
+                                enumtext = '{0}\n{1}'.format(enumtext, vuln.text)
+                            else:
+                                enumtext = '' 
                     
-                    for vuln in root.findall('./subnet/[subnet-address = "'+naddy+'"]/host/[address = "'+ip+'"]/httpVuln'):
-                        if vuln.text:
-                            enumtext = '{0}\n{1}'.format(enumtext, vuln.text)
-                        else:
-                            pass
-                        # printret = '{0}{1}'.format(printret, enumtext)
-                all_results = '{0}{1}'.format(printret, enumtext)         
+                        all_results = '{0}{1}'.format(printret, enumtext)
+  
+                        # printret = '{0}{1}'.format(printret, enumtext)        
             else:
                 naddy = addy
                 tree = ET.parse(self.rootfile)
@@ -1576,11 +1579,24 @@ class display(object):
                 if subnethosts:
                     for h in root.findall('./subnet/[subnet-address = "'+naddy+'"]/host/address'):
                         hlist.append(h.text)
+                        
                     ip_list = [ip.strip() for ip in hlist]
                     for ip in sorted(ip_list, key = lambda ip: ( int(ip.split(".")[0]), int(ip.split(".")[1]), int(ip.split(".")[2]), int(ip.split(".")[3]))):
+                        enumtext = ''
+                        printret = ''
+                        for g in root.findall('./subnet/[subnet-address = "'+naddy+'"]/host/[address = "'+ip+'"]/gobuster'):
+                            if g.text:
+                                enumtext = '{0}\n{1}'.format(enumtext, g.text)
+            
+                        
+                        for vuln in root.findall('./subnet/[subnet-address = "'+naddy+'"]/host/[address = "'+ip+'"]/httpVuln'):
+                            if vuln.text:
+                                enumtext = '{0}\n{1}'.format(enumtext, vuln.text)
+
                         introptext = '\n---------------'
                         # printret = '{0}'.format(' '*70)
-                        printret = printret + introptext
+                        printret = all_results + introptext
+                        
                         if ip == scanjobs.get_ip_address(scanjobs(), addy):
                             printret = '{0}\n{1} (current host)'.format(printret,ip)
                         else:
@@ -1614,23 +1630,16 @@ class display(object):
                                 printtext = printtext
 
                             printret = '{0}{1}'.format(printret, printtext)         
-                            plist.remove(pp)
-                        
-                        for g in root.findall('./subnet/[subnet-address = "'+naddy+'"]/host/[address = "'+ip+'"]/gobuster'):
-                            if g.text:
-                                enumtext = '{0}\n{1}'.format(enumtext, g.text)
-                            else:
-                                pass
-                        
-                        for vuln in root.findall('./subnet/[subnet-address = "'+naddy+'"]/host/[address = "'+ip+'"]/httpVuln'):
-                            if vuln.text:
-                                enumtext = '{0}\n{1}'.format(enumtext, vuln.text)
-                            else:
-                                pass
-                        # printret = '{0}{1}'.format(printret, enumtext) 
-                all_results = '{0}{1}'.format(printret, enumtext)
-        except:
+                            plist.remove(pp)    
+
+                        all_results = '{0}{1}'.format(printret, enumtext)
+
+                            # printret_ALL = '{0}{1}'.format(printret, enumtext) 
+                    
+        except Exception:
+            # all_results = '{0}\n\n{1}'.format(all_results, e)
             pass
+        
         return all_results, printret, enumtext, hlist
 
 
